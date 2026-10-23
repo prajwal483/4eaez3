@@ -48,3 +48,10 @@ it("restores the view from a shared link", async () => {
   expect(await screen.findByText("Mean absolute error")).toBeInTheDocument();
   expect(api.accuracy).toHaveBeenCalledWith(6, anySignal);
 });
+
+it("steps days with the arrow keys", async () => {
+  render(<App />);
+  await screen.findByText("Shortfall at risk (P10)");
+  fireEvent.keyDown(window, { key: "ArrowRight" });
+  expect(api.decision).toHaveBeenLastCalledWith("2026-01-03", "09:20", anySignal);
+});

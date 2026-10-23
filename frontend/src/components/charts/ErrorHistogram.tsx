@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatGwDelta, formatGwSigned } from "../../format";
 import type { HistogramBin } from "../../types";
@@ -14,9 +15,12 @@ const barColor = (r: BinRow): string => (r.start >= 0 ? chartColors.risk : chart
 
 const lines = (r: BinRow): TooltipLine[] => [{ label: "Hours", value: String(r.count), color: barColor(r), kind: "area" }];
 
-export function ErrorHistogram({ bins }: { bins: HistogramBin[] }) {
-  const rows: BinRow[] = bins.map((b) => ({ start: b.bin_start_mw, end: b.bin_end_mw, count: b.count }));
-  const xTicks = rows.filter((r) => r.start % 1000 === 0).map((r) => r.start);
+function ErrorHistogramView({ bins }: { bins: HistogramBin[] }) {
+  const rows = useMemo<BinRow[]>(
+    () => bins.map((b) => ({ start: b.bin_start_mw, end: b.bin_end_mw, count: b.count })),
+    [bins],
+  );
+  const xTicks = useMemo(() => rows.filter((r) => r.start % 1000 === 0).map((r) => r.start), [rows]);
 
   return (
     <ResponsiveContainer width="100%" height={260}>
@@ -40,3 +44,5 @@ export function ErrorHistogram({ bins }: { bins: HistogramBin[] }) {
     </ResponsiveContainer>
   );
 }
+
+export const ErrorHistogram = memo(ErrorHistogramView);

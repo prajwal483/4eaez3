@@ -62,4 +62,17 @@ describe("DecisionView", () => {
     expect(screen.queryByText("Updating…")).not.toBeInTheDocument();
     expect(api.decision).toHaveBeenCalledTimes(2);
   });
+
+  it("says so when no forecast exists for the day", async () => {
+    vi.mocked(api.decision).mockResolvedValue({
+      ...decisionFixture,
+      points: [],
+      forecast_published_at: null,
+      forecast_energy_mwh: null,
+      actual_energy_mwh: null,
+    });
+    render(<DecisionView deliveryDate="2026-01-02" gateTime="09:20" />);
+    expect(await screen.findByText("No forecast was published for this day before the gate.")).toBeInTheDocument();
+    expect(screen.getByText(/No forecast was published before the 09:20 gate/)).toBeInTheDocument();
+  });
 });
