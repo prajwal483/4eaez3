@@ -75,8 +75,9 @@ def test_accuracy_view_for_one_day(dataset):
 
 
 def test_horizon_profile_error_grows_with_horizon(dataset):
-    rows = horizon_profile(dataset.forecasts, dataset.actuals,
-                           T("2026-01-02T00:00Z"), T("2026-01-03T00:00Z"), horizons=[0, 24])
+    rows = horizon_profile(
+        dataset.forecasts, dataset.actuals, T("2026-01-02T00:00Z"), T("2026-01-03T00:00Z"), horizons=[0, 24]
+    )
     assert [r["horizon_hours"] for r in rows] == [0, 24]
     assert rows[0]["metrics"]["mae_mw"] == 25.0
     assert rows[1]["metrics"]["mae_mw"] == 265.0

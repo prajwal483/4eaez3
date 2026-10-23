@@ -1,4 +1,4 @@
-from datetime import date, datetime, time, timezone
+from datetime import UTC, date, datetime, time
 from pathlib import Path
 
 ELEXON_BASE = "https://data.elexon.co.uk/bmrs/api/v1/datasets"
@@ -10,8 +10,8 @@ LAST_DELIVERY_DATE = date(2026, 2, 1)
 # Extra history before the window lets early-January decisions use prior forecast errors.
 ACTUALS_FROM = date(2025, 12, 25)
 ACTUALS_TO = date(2026, 2, 2)
-FORECASTS_PUBLISHED_FROM = datetime(2025, 12, 23, tzinfo=timezone.utc)
-FORECASTS_PUBLISHED_TO = datetime(2026, 2, 1, 12, tzinfo=timezone.utc)
+FORECASTS_PUBLISHED_FROM = datetime(2025, 12, 23, tzinfo=UTC)
+FORECASTS_PUBLISHED_TO = datetime(2026, 2, 1, 12, tzinfo=UTC)
 
 # Since Brexit (Jan 2021) the first GB day-ahead auction (EPEX 60-min) closes at 09:20 UK time on D-1;
 # N2EX follows at 09:50. UK time equals UTC in January.

@@ -10,3 +10,7 @@ frontend/dist/
 
 .vercel
 .env*
+
+# Local artefacts
+.coverage
+backend/backend.zip

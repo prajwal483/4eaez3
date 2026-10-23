@@ -1,4 +1,5 @@
 """Download the January 2026 decision window from Elexon into backend/data."""
+
 import httpx
 
 from app.config import SNAPSHOT_DIR
