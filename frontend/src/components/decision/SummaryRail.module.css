@@ -1,0 +1,78 @@
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+}
+.risk {
+  padding: var(--space-4);
+  background: var(--risk-bg);
+  border-radius: 8px;
+}
+.riskLabel {
+  font-size: var(--text-sm);
+  color: var(--risk);
+}
+.riskValue {
+  margin-top: var(--space-1);
+  font-size: var(--text-2xl);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--risk);
+}
+.riskCaption {
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-2);
+}
+.noRange {
+  padding: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  background: var(--bg);
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+}
+.figures {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+}
+.figures dt {
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+.figures dd {
+  margin: 2px 0 0;
+  font-size: var(--text-xl);
+  font-weight: 500;
+}
+.missing {
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-3);
+}
+.meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  font-size: var(--text-xs);
+}
+.meta > div {
+  display: contents;
+}
+.meta dt {
+  color: var(--text-3);
+}
+.meta dd {
+  margin: 0;
+  color: var(--text-2);
+  text-align: right;
+}
