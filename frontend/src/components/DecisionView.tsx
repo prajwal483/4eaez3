@@ -1,8 +1,10 @@
-import { Area, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api } from "../api";
-import { formatGwh, formatHourUtc, formatMw, formatUtc } from "../format";
+import { formatGwh, formatMw, formatUtc } from "../format";
 import type { DecisionResponse } from "../types";
 import { useAsync } from "../useAsync";
+import { ChartLegend } from "./charts/ChartLegend";
+import { DECISION_LEGEND, DecisionChart } from "./charts/DecisionChart";
+import { Panel } from "./layout/Panel";
 import { type Card, MetricCards } from "./MetricCards";
 
 function shortfallAtRiskMwh(d: DecisionResponse): number | null {
@@ -29,9 +31,6 @@ function decisionCards(d: DecisionResponse): Card[] {
   ];
 }
 
-const mwOrRange = (v: unknown): string =>
-  Array.isArray(v) ? `${formatMw(v[0] as number)} – ${formatMw(v[1] as number)}` : formatMw(v as number);
-
 interface DecisionViewProps {
   deliveryDate: string;
   gateTime: string;
@@ -41,38 +40,15 @@ export function DecisionView({ deliveryDate, gateTime }: DecisionViewProps) {
   const decision = useAsync(() => api.decision(deliveryDate, gateTime), [deliveryDate, gateTime]);
   const d = decision.data;
 
-  const rows = d?.points.map((p) => ({
-    time: formatHourUtc(p.start_time),
-    forecast: p.forecast_mw,
-    actual: p.actual_mw,
-    band: p.low_mw != null && p.high_mw != null ? [p.low_mw, p.high_mw] : null,
-  }));
-
   return (
     <section>
       {decision.error && <div className="error">{decision.error}</div>}
       {d && (
         <>
           <MetricCards cards={decisionCards(d)} />
-          <div className="panel">
-            <h2>Wind forecast available at gate closure vs outturn</h2>
-            <p>
-              Shaded band: likely range (P10–P90) based on errors from the last 14 days at each hour's own lead time,
-              using only outturn published before gate closure.
-            </p>
-            <ResponsiveContainer width="100%" height={360}>
-              <ComposedChart data={rows}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e6e5e1" />
-                <XAxis dataKey="time" />
-                <YAxis tickFormatter={(v: number) => `${(v / 1000).toFixed(0)} GW`} />
-                <Tooltip formatter={mwOrRange} />
-                <Legend />
-                <Area dataKey="band" name="Likely range (P10–P90)" fill="#93c5fd" stroke="none" fillOpacity={0.4} />
-                <Line dataKey="forecast" name="Forecast" stroke="#1f5fbf" strokeWidth={2} dot={false} />
-                <Line dataKey="actual" name="Actual" stroke="#3d3d3a" strokeWidth={2} dot={false} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
+          <Panel title="Wind forecast at gate closure vs outturn" legend={<ChartLegend items={DECISION_LEGEND} />}>
+            <DecisionChart points={d.points} />
+          </Panel>
         </>
       )}
     </section>
