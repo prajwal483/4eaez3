@@ -55,7 +55,8 @@ A pilot web app for a UK utility's day-ahead power buying team. It answers two q
 | `backend/scripts/calibration.py` | Measures how often outturn lands inside the decision-view P10–P90 range |
 | `backend/tests/` | pytest suite using a synthetic dataset where error = 10 MW × horizon |
 | `frontend/src/App.tsx` | App shell and tabs |
-| `frontend/src/components/` | `DecisionView`, `AccuracyView`, `MetricCards` (+ tests) |
+| `frontend/src/components/` | Page views (`DecisionView`, `AccuracyView`) and their building blocks: `layout/`, `controls/`, `charts/`, `decision/`, `accuracy/`, `feedback/` (+ tests) |
+| `frontend/src/styles/` | Design tokens and base styles |
 | `frontend/src/api.ts`, `types.ts` | Typed API client mirroring the backend schemas |
 | `frontend/src/format.ts`, `useAsync.ts` | Formatting helpers and data-loading hook |
 | `Dockerfile`, `docker-compose.yml` | Container build and local run (API + frontend in one image) |

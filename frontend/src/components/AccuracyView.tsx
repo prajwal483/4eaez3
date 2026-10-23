@@ -1,105 +1,96 @@
-import {
-  Area,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ComposedChart,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { api } from "../api";
-import { formatDayHourUtc, formatMw, formatPct } from "../format";
+import { formatMw, formatPct } from "../format";
+import type { Metrics } from "../types";
 import { useAsync } from "../useAsync";
-import { MetricCards } from "./MetricCards";
+import { type Metric, MetricStrip } from "./accuracy/MetricStrip";
+import s from "./AccuracyView.module.css";
+import { AccuracySeriesChart } from "./charts/AccuracySeriesChart";
+import { ChartLegend, type LegendItem } from "./charts/ChartLegend";
+import { chartColors } from "./charts/chartTheme";
+import { ErrorHistogram } from "./charts/ErrorHistogram";
+import { HorizonChart } from "./charts/HorizonChart";
+import { ErrorPanel } from "./feedback/ErrorPanel";
+import { Skeleton } from "./feedback/Skeleton";
+import { PageHeader } from "./layout/PageHeader";
+import { Panel } from "./layout/Panel";
 
-const gw = (v: number) => `${(v / 1000).toFixed(0)} GW`;
-const mwOrRange = (v: unknown): string =>
-  Array.isArray(v) ? `${formatMw(v[0] as number)} – ${formatMw(v[1] as number)}` : formatMw(v as number);
+const TITLE = "Forecast accuracy";
+
+const SERIES_LEGEND: LegendItem[] = [
+  { label: "Forecast", color: chartColors.forecast, kind: "line" },
+  { label: "Outturn", color: chartColors.outturn, kind: "dashed" },
+];
+
+const HISTOGRAM_LEGEND: LegendItem[] = [
+  { label: "Wind below forecast", color: chartColors.risk, kind: "bar" },
+  { label: "Wind above forecast", color: chartColors.neutralBar, kind: "bar" },
+];
+
+const HORIZON_LEGEND: LegendItem[] = [
+  { label: "MAE", color: chartColors.forecast, kind: "line" },
+  { label: "P10–P90 error", color: chartColors.forecastRangeKey, kind: "area" },
+];
+
+const accuracyMetrics = (m: Metrics): Metric[] => [
+  { label: "Mean absolute error", value: formatMw(m.mae_mw), note: `${m.n} hourly samples` },
+  { label: "RMSE", value: formatMw(m.rmse_mw), note: "Penalises large misses" },
+  { label: "Bias", value: formatMw(m.bias_mw), note: "Positive: forecast above outturn" },
+  { label: "WAPE", value: formatPct(m.wape_pct), note: "Absolute error as % of outturn" },
+  { label: "P90 absolute error", value: formatMw(m.p90_abs_mw), note: "9 in 10 hours miss by less" },
+];
 
 export function AccuracyView({ horizon }: { horizon: number }) {
   const accuracy = useAsync(() => api.accuracy(horizon), [horizon]);
   const profile = useAsync(() => api.byHorizon(), []);
   const a = accuracy.data;
-  const m = a?.metrics;
+  const description = `Forecast available at least ${horizon} h before each hour, January 2026 delivery.`;
 
-  const series = a?.points.map((p) => ({ time: formatDayHourUtc(p.start_time), forecast: p.forecast_mw, actual: p.actual_mw }));
-  const bins = a?.histogram.map((b) => ({ label: `${(b.bin_start_mw / 1000).toFixed(2)} GW`, count: b.count }));
-  const byHorizon = profile.data?.map((r) => ({
-    horizon: r.horizon_hours,
-    mae: r.metrics.mae_mw,
-    band: r.p10_error_mw != null && r.p90_error_mw != null ? [r.p10_error_mw, r.p90_error_mw] : null,
-  }));
+  if (accuracy.error) {
+    return (
+      <>
+        <PageHeader title={TITLE} />
+        <ErrorPanel message={`Couldn't load accuracy for the ${horizon} h horizon.`} onRetry={accuracy.reload} />
+      </>
+    );
+  }
+
+  if (!a) {
+    return (
+      <>
+        <PageHeader title={TITLE} description={description} />
+        <div className={s.content}>
+          <Skeleton height={96} />
+          <Skeleton height={360} />
+        </div>
+      </>
+    );
+  }
 
   return (
-    <section>
-      {accuracy.error && <div className="error">{accuracy.error}</div>}
-      {m && (
-        <MetricCards
-          cards={[
-            { label: "Mean absolute error", value: formatMw(m.mae_mw), hint: `${m.n} hourly samples` },
-            { label: "RMSE", value: formatMw(m.rmse_mw), hint: "penalises large misses" },
-            { label: "Bias", value: formatMw(m.bias_mw), hint: "positive = wind over-forecast" },
-            { label: "WAPE", value: formatPct(m.wape_pct), hint: "absolute error as % of actual energy" },
-            { label: "P90 absolute error", value: formatMw(m.p90_abs_mw), hint: "9 in 10 hours miss by less" },
-          ]}
-        />
-      )}
-      {a && (
-        <div className="panel">
-          <h2>Actual vs forecast — January 2026 delivery</h2>
-          <p>Forecast shown is what was available {horizon} h before each hour.</p>
-          <ResponsiveContainer width="100%" height={320}>
-            <LineChart data={series}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e6e5e1" />
-              <XAxis dataKey="time" minTickGap={60} />
-              <YAxis tickFormatter={gw} />
-              <Tooltip formatter={mwOrRange} />
-              <Legend />
-              <Line dataKey="actual" name="Actual" stroke="#3d3d3a" dot={false} strokeWidth={1.5} />
-              <Line dataKey="forecast" name="Forecast" stroke="#1f5fbf" dot={false} strokeWidth={1.5} />
-            </LineChart>
-          </ResponsiveContainer>
+    <>
+      <PageHeader title={TITLE} description={description} status={accuracy.loading ? "Updating…" : undefined} />
+      <div className={s.content} aria-busy={accuracy.loading}>
+        <MetricStrip metrics={accuracyMetrics(a.metrics)} />
+        <Panel title="Actual vs forecast" legend={<ChartLegend items={SERIES_LEGEND} />}>
+          <AccuracySeriesChart points={a.points} />
+        </Panel>
+        <div className={s.row}>
+          <Panel
+            title="Error distribution"
+            subtitle="Forecast minus outturn, hourly"
+            legend={<ChartLegend items={HISTOGRAM_LEGEND} />}
+          >
+            <ErrorHistogram bins={a.histogram} />
+          </Panel>
+          <Panel
+            title="How error grows with lead time"
+            subtitle="By hours ahead of delivery"
+            legend={<ChartLegend items={HORIZON_LEGEND} />}
+          >
+            {profile.data ? <HorizonChart rows={profile.data} selected={horizon} /> : <Skeleton height={260} />}
+          </Panel>
         </div>
-      )}
-      <div className="grid-2">
-        {a && (
-          <div className="panel">
-            <h2>Error distribution</h2>
-            <p>Forecast − actual, hourly. Right of zero means wind came in lower than forecast.</p>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={bins}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e6e5e1" />
-                <XAxis dataKey="label" minTickGap={20} />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="count" name="Hours" fill="#b4b2a9" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-        {byHorizon && (
-          <div className="panel">
-            <h2>How error grows with lead time</h2>
-            <p>MAE and P10–P90 signed error by forecast horizon (hours before delivery).</p>
-            <ResponsiveContainer width="100%" height={260}>
-              <ComposedChart data={byHorizon}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e6e5e1" />
-                <XAxis dataKey="horizon" unit=" h" />
-                <YAxis tickFormatter={gw} />
-                <Tooltip formatter={mwOrRange} />
-                <Legend />
-                <Area dataKey="band" name="P10–P90 error" fill="rgba(31, 95, 191, 0.12)" stroke="none" />
-                <Line dataKey="mae" name="MAE" stroke="#1f5fbf" strokeWidth={2} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        )}
       </div>
-    </section>
+    </>
   );
 }
