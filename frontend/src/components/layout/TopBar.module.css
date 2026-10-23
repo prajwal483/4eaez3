@@ -1,0 +1,65 @@
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.inner {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+  min-height: 60px;
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-7);
+  flex-wrap: wrap;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-lg);
+  font-weight: 500;
+}
+.mark {
+  color: var(--forecast);
+}
+.tabs {
+  display: flex;
+  gap: var(--space-6);
+}
+.tab {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  color: var(--text-2);
+  font-size: var(--text-md);
+  cursor: pointer;
+}
+.tab:hover {
+  color: var(--text);
+}
+.tab[aria-current="page"] {
+  color: var(--text);
+  font-weight: 500;
+  border-bottom-color: var(--forecast);
+}
+.controls {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  flex-wrap: wrap;
+}
+@media (max-width: 900px) {
+  .controls {
+    margin-left: 0;
+    width: 100%;
+  }
+}

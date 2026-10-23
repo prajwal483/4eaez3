@@ -1,0 +1,25 @@
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.step {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-control);
+  background: var(--bg);
+  color: var(--text-2);
+  cursor: pointer;
+}
+.step:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--text-3);
+}
+.step:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

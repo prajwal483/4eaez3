@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { api } from "../api";
-import { accuracyFixture, horizonFixture, metaFixture } from "../test/fixtures";
+import { accuracyFixture, horizonFixture } from "../test/fixtures";
 import { AccuracyView } from "./AccuracyView";
 
 vi.mock("../api", () => ({
@@ -13,8 +13,8 @@ beforeEach(() => {
 });
 
 describe("AccuracyView", () => {
-  it("shows headline metrics for the default 24 h horizon", async () => {
-    render(<AccuracyView meta={metaFixture} />);
+  it("shows headline metrics for the requested horizon", async () => {
+    render(<AccuracyView horizon={24} />);
     expect(await screen.findByText("Mean absolute error")).toBeInTheDocument();
     expect(api.accuracy).toHaveBeenCalledWith(24);
     expect(screen.getByText("512 MW")).toBeInTheDocument();
@@ -22,10 +22,10 @@ describe("AccuracyView", () => {
     expect(await screen.findByText("How error grows with lead time")).toBeInTheDocument();
   });
 
-  it("refetches when the horizon slider moves", async () => {
-    render(<AccuracyView meta={metaFixture} />);
+  it("refetches when the horizon changes", async () => {
+    const { rerender } = render(<AccuracyView horizon={24} />);
     await screen.findByText("Mean absolute error");
-    fireEvent.change(screen.getByLabelText(/Forecast horizon/), { target: { value: "6" } });
+    rerender(<AccuracyView horizon={6} />);
     expect(api.accuracy).toHaveBeenLastCalledWith(6);
   });
 });

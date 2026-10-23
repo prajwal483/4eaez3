@@ -1,43 +1,56 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { api } from "./api";
+import s from "./App.module.css";
 import { AccuracyView } from "./components/AccuracyView";
+import { DayStepper } from "./components/controls/DayStepper";
+import { GATE_OPTIONS } from "./components/controls/gateOptions";
+import { HorizonSlider } from "./components/controls/HorizonSlider";
+import { Select } from "./components/controls/Select";
 import { DecisionView } from "./components/DecisionView";
+import { type Tab, TopBar } from "./components/layout/TopBar";
+import { deliveryDates } from "./format";
+import type { Meta } from "./types";
 import { useAsync } from "./useAsync";
 
-type Tab = "decision" | "accuracy";
+const DEFAULT_HORIZON_HOURS = 24;
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "decision", label: "Day-ahead decision" },
-  { id: "accuracy", label: "Forecast accuracy" },
-];
-
-export default function App() {
+function Dashboard({ meta }: { meta: Meta }) {
   const [tab, setTab] = useState<Tab>("decision");
-  const meta = useAsync(() => api.meta(), []);
+  const days = useMemo(() => deliveryDates(meta.first_delivery_date, meta.last_delivery_date), [meta]);
+  const [deliveryDate, setDeliveryDate] = useState(meta.first_delivery_date);
+  const [gateTime, setGateTime] = useState(meta.default_gate_time_utc);
+  const [horizon, setHorizon] = useState(DEFAULT_HORIZON_HOURS);
+
+  const controls =
+    tab === "decision" ? (
+      <>
+        <DayStepper days={days} value={deliveryDate} onChange={setDeliveryDate} />
+        <Select label="Gate closure on D-1" hideLabel value={gateTime} options={GATE_OPTIONS} onChange={setGateTime} />
+      </>
+    ) : (
+      <HorizonSlider value={horizon} max={meta.max_horizon_hours} onChange={setHorizon} />
+    );
 
   return (
-    <div className="app">
-      <header className="header">
-        <div>
-          <h1>GridBrick · Wind Forecast Monitor</h1>
-          <p className="subtitle">GB national wind generation · day-ahead buying decisions for January 2026</p>
-        </div>
-        <nav className="tabs">
-          {TABS.map((t) => (
-            <button key={t.id} aria-pressed={tab === t.id} onClick={() => setTab(t.id)}>
-              {t.label}
-            </button>
-          ))}
-        </nav>
-      </header>
-      <main>
-        {meta.error && <div className="error">{meta.error}</div>}
-        {meta.data && (tab === "decision" ? <DecisionView meta={meta.data} /> : <AccuracyView meta={meta.data} />)}
+    <>
+      <TopBar tab={tab} onTabChange={setTab} controls={controls} />
+      <main className={s.main}>
+        {tab === "decision" ? (
+          <DecisionView deliveryDate={deliveryDate} gateTime={gateTime} />
+        ) : (
+          <AccuracyView horizon={horizon} />
+        )}
       </main>
-      <footer>
-        Data: Elexon BMRS — FUELHH (outturn, fuelType WIND) and WINDFOR (forecast). All times UTC (= UK time in
-        January). {meta.data && `${meta.data.forecast_runs} forecast runs loaded from ${meta.data.data_source}.`}
+      <footer className={s.footer}>
+        Data: Elexon BMRS — FUELHH outturn (fuel type WIND) and WINDFOR forecasts, {meta.forecast_runs} forecast runs.
+        All times UTC, which equals UK time in January.
       </footer>
-    </div>
+    </>
   );
+}
+
+export default function App() {
+  const meta = useAsync(() => api.meta(), []);
+  if (meta.data) return <Dashboard meta={meta.data} />;
+  return <div className={s.boot}>{meta.error ?? "Loading…"}</div>;
 }

@@ -1,17 +1,9 @@
-import { useState } from "react";
 import { Area, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api } from "../api";
-import { deliveryDates, formatGwh, formatHourUtc, formatMw, formatUtc } from "../format";
-import type { DecisionResponse, Meta } from "../types";
+import { formatGwh, formatHourUtc, formatMw, formatUtc } from "../format";
+import type { DecisionResponse } from "../types";
 import { useAsync } from "../useAsync";
 import { type Card, MetricCards } from "./MetricCards";
-
-// GB day-ahead auctions since 2021 (UK time = UTC in January).
-const GATES = [
-  { value: "09:20", label: "09:20 UTC · EPEX 60-min auction" },
-  { value: "09:50", label: "09:50 UTC · N2EX hourly auction" },
-  { value: "15:30", label: "15:30 UTC · EPEX 30-min auction" },
-];
 
 function shortfallAtRiskMwh(d: DecisionResponse): number | null {
   // Energy to cover if wind lands at the low (P10) bound; points are hourly so summed MW are MWh.
@@ -40,9 +32,12 @@ function decisionCards(d: DecisionResponse): Card[] {
 const mwOrRange = (v: unknown): string =>
   Array.isArray(v) ? `${formatMw(v[0] as number)} – ${formatMw(v[1] as number)}` : formatMw(v as number);
 
-export function DecisionView({ meta }: { meta: Meta }) {
-  const [deliveryDate, setDeliveryDate] = useState(meta.first_delivery_date);
-  const [gateTime, setGateTime] = useState(meta.default_gate_time_utc);
+interface DecisionViewProps {
+  deliveryDate: string;
+  gateTime: string;
+}
+
+export function DecisionView({ deliveryDate, gateTime }: DecisionViewProps) {
   const decision = useAsync(() => api.decision(deliveryDate, gateTime), [deliveryDate, gateTime]);
   const d = decision.data;
 
@@ -55,25 +50,6 @@ export function DecisionView({ meta }: { meta: Meta }) {
 
   return (
     <section>
-      <div className="controls">
-        <label>
-          Delivery day{" "}
-          <select value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)}>
-            {deliveryDates(meta.first_delivery_date, meta.last_delivery_date).map((day) => (
-              <option key={day} value={day}>{day}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Gate closure on D-1{" "}
-          <select value={gateTime} onChange={(e) => setGateTime(e.target.value)}>
-            {GATES.map((g) => (
-              <option key={g.value} value={g.value}>{g.label}</option>
-            ))}
-          </select>
-        </label>
-        {decision.loading && <span className="muted">Loading…</span>}
-      </div>
       {decision.error && <div className="error">{decision.error}</div>}
       {d && (
         <>
@@ -86,14 +62,14 @@ export function DecisionView({ meta }: { meta: Meta }) {
             </p>
             <ResponsiveContainer width="100%" height={360}>
               <ComposedChart data={rows}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e6e5e1" />
                 <XAxis dataKey="time" />
                 <YAxis tickFormatter={(v: number) => `${(v / 1000).toFixed(0)} GW`} />
                 <Tooltip formatter={mwOrRange} />
                 <Legend />
                 <Area dataKey="band" name="Likely range (P10–P90)" fill="#93c5fd" stroke="none" fillOpacity={0.4} />
-                <Line dataKey="forecast" name="Forecast" stroke="#2563eb" strokeWidth={2} dot={false} />
-                <Line dataKey="actual" name="Actual" stroke="#16a34a" strokeWidth={2} dot={false} />
+                <Line dataKey="forecast" name="Forecast" stroke="#1f5fbf" strokeWidth={2} dot={false} />
+                <Line dataKey="actual" name="Actual" stroke="#3d3d3a" strokeWidth={2} dot={false} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
