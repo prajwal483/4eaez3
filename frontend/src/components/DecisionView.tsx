@@ -1,7 +1,7 @@
-import { api } from "../api";
+import { api, errorReference } from "../api";
+import { useQuery } from "../data/useQuery";
 import { formatDayLong, formatHourUtc, formatWeekdayDay } from "../format";
 import type { DecisionResponse } from "../types";
-import { useAsync } from "../useAsync";
 import { ChartLegend } from "./charts/ChartLegend";
 import { DECISION_LEGEND, DecisionChart } from "./charts/DecisionChart";
 import { SummaryRail } from "./decision/SummaryRail";
@@ -26,14 +26,20 @@ interface DecisionViewProps {
 }
 
 export function DecisionView({ deliveryDate, gateTime }: DecisionViewProps) {
-  const decision = useAsync(() => api.decision(deliveryDate, gateTime), [deliveryDate, gateTime]);
+  const decision = useQuery(`decision:${deliveryDate}:${gateTime}`, (signal) =>
+    api.decision(deliveryDate, gateTime, signal),
+  );
   const d = decision.data;
 
   if (decision.error) {
     return (
       <>
         <PageHeader title={TITLE} />
-        <ErrorPanel message={`Couldn't load the forecast for ${formatDayLong(deliveryDate)}.`} onRetry={decision.reload} />
+        <ErrorPanel
+          message={`Couldn't load the forecast for ${formatDayLong(deliveryDate)}.`}
+          reference={errorReference(decision.error)}
+          onRetry={decision.reload}
+        />
       </>
     );
   }

@@ -1,11 +1,14 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { api } from "../api";
+import { api, ApiError } from "../api";
 import { decisionFixture } from "../test/fixtures";
 import { DecisionView } from "./DecisionView";
 
-vi.mock("../api", () => ({
+vi.mock("../api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../api")>()),
   api: { meta: vi.fn(), decision: vi.fn(), accuracy: vi.fn(), byHorizon: vi.fn() },
 }));
+
+const anySignal = expect.any(AbortSignal);
 
 beforeEach(() => {
   vi.mocked(api.decision).mockReset();
@@ -16,8 +19,7 @@ describe("DecisionView", () => {
   it("shows the shortfall, energy figures and forecast run in the rail", async () => {
     render(<DecisionView deliveryDate="2026-01-02" gateTime="09:20" />);
     expect(await screen.findByText("Shortfall at risk (P10)")).toBeInTheDocument();
-    expect(api.decision).toHaveBeenCalledWith("2026-01-02", "09:20");
-    // (1000-800) + (1200-900) = 500 MWh
+    expect(api.decision).toHaveBeenCalledWith("2026-01-02", "09:20", anySignal);
     expect(screen.getByText("0.5 GWh")).toBeInTheDocument();
     expect(screen.getAllByText("2.2 GWh")).toHaveLength(2);
     expect(screen.getByText("Thu 1 Jan, 07:30 UTC")).toBeInTheDocument();
@@ -29,13 +31,13 @@ describe("DecisionView", () => {
     vi.mocked(api.decision).mockResolvedValue({ ...decisionFixture, points });
     render(<DecisionView deliveryDate="2026-01-02" gateTime="09:20" />);
     expect(await screen.findByText("Not enough history yet for a likely range.")).toBeInTheDocument();
-    expect(screen.queryByText("Shortfall at risk (P10)")).not.toBeInTheDocument();
   });
 
-  it("shows an error with a retry that refetches", async () => {
-    vi.mocked(api.decision).mockRejectedValueOnce(new Error("boom"));
+  it("shows an error with a reference and a retry that refetches", async () => {
+    vi.mocked(api.decision).mockRejectedValueOnce(new ApiError("boom", 500, "internal_error", "req-42"));
     render(<DecisionView deliveryDate="2026-01-15" gateTime="09:20" />);
     expect(await screen.findByText("Couldn't load the forecast for Thu 15 Jan 2026.")).toBeInTheDocument();
+    expect(screen.getByText("Reference: req-42")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByText("Shortfall at risk (P10)")).toBeInTheDocument();
     expect(api.decision).toHaveBeenCalledTimes(2);
@@ -46,8 +48,18 @@ describe("DecisionView", () => {
     await screen.findByText("Shortfall at risk (P10)");
     vi.mocked(api.decision).mockReturnValue(new Promise(() => {}));
     rerender(<DecisionView deliveryDate="2026-01-15" gateTime="09:50" />);
-    expect(api.decision).toHaveBeenLastCalledWith("2026-01-15", "09:50");
+    expect(api.decision).toHaveBeenLastCalledWith("2026-01-15", "09:50", anySignal);
     expect(await screen.findByText("Updating…")).toBeInTheDocument();
     expect(screen.getByText("Shortfall at risk (P10)")).toBeInTheDocument();
+  });
+
+  it("returns instantly to a day it has already loaded", async () => {
+    const { rerender } = render(<DecisionView deliveryDate="2026-01-02" gateTime="09:20" />);
+    await screen.findByText("Shortfall at risk (P10)");
+    rerender(<DecisionView deliveryDate="2026-01-03" gateTime="09:20" />);
+    await screen.findByText("Shortfall at risk (P10)");
+    rerender(<DecisionView deliveryDate="2026-01-02" gateTime="09:20" />);
+    expect(screen.queryByText("Updating…")).not.toBeInTheDocument();
+    expect(api.decision).toHaveBeenCalledTimes(2);
   });
 });

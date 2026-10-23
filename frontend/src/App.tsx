@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { api } from "./api";
 import s from "./App.module.css";
 import { AccuracyView } from "./components/AccuracyView";
@@ -7,38 +7,53 @@ import { GATE_OPTIONS } from "./components/controls/gateOptions";
 import { HorizonSlider } from "./components/controls/HorizonSlider";
 import { Select } from "./components/controls/Select";
 import { DecisionView } from "./components/DecisionView";
-import { type Tab, TopBar } from "./components/layout/TopBar";
+import { TopBar } from "./components/layout/TopBar";
+import { useQuery } from "./data/useQuery";
 import { deliveryDates } from "./format";
+import { useViewState } from "./state/useViewState";
+import type { ViewLimits } from "./state/viewState";
 import type { Meta } from "./types";
-import { useAsync } from "./useAsync";
 
 const DEFAULT_HORIZON_HOURS = 24;
 
 function Dashboard({ meta }: { meta: Meta }) {
-  const [tab, setTab] = useState<Tab>("decision");
   const days = useMemo(() => deliveryDates(meta.first_delivery_date, meta.last_delivery_date), [meta]);
-  const [deliveryDate, setDeliveryDate] = useState(meta.first_delivery_date);
-  const [gateTime, setGateTime] = useState(meta.default_gate_time_utc);
-  const [horizon, setHorizon] = useState(DEFAULT_HORIZON_HOURS);
+  const limits = useMemo<ViewLimits>(
+    () => ({
+      days,
+      gates: GATE_OPTIONS.map((g) => g.value),
+      maxHorizon: meta.max_horizon_hours,
+      defaultGate: meta.default_gate_time_utc,
+      defaultHorizon: DEFAULT_HORIZON_HOURS,
+    }),
+    [days, meta],
+  );
+  const [view, update] = useViewState(limits);
 
   const controls =
-    tab === "decision" ? (
+    view.tab === "decision" ? (
       <>
-        <DayStepper days={days} value={deliveryDate} onChange={setDeliveryDate} />
-        <Select label="Gate closure on D-1" hideLabel value={gateTime} options={GATE_OPTIONS} onChange={setGateTime} />
+        <DayStepper days={days} value={view.day} onChange={(day) => update({ day })} />
+        <Select
+          label="Gate closure on D-1"
+          hideLabel
+          value={view.gate}
+          options={GATE_OPTIONS}
+          onChange={(gate) => update({ gate })}
+        />
       </>
     ) : (
-      <HorizonSlider value={horizon} max={meta.max_horizon_hours} onChange={setHorizon} />
+      <HorizonSlider value={view.horizon} max={meta.max_horizon_hours} onChange={(horizon) => update({ horizon })} />
     );
 
   return (
     <>
-      <TopBar tab={tab} onTabChange={setTab} controls={controls} />
+      <TopBar tab={view.tab} onTabChange={(tab) => update({ tab })} controls={controls} />
       <main className={s.main}>
-        {tab === "decision" ? (
-          <DecisionView deliveryDate={deliveryDate} gateTime={gateTime} />
+        {view.tab === "decision" ? (
+          <DecisionView deliveryDate={view.day} gateTime={view.gate} />
         ) : (
-          <AccuracyView horizon={horizon} />
+          <AccuracyView horizon={view.horizon} />
         )}
       </main>
       <footer className={s.footer}>
@@ -50,7 +65,7 @@ function Dashboard({ meta }: { meta: Meta }) {
 }
 
 export default function App() {
-  const meta = useAsync(() => api.meta(), []);
+  const meta = useQuery("meta", (signal) => api.meta(signal));
   if (meta.data) return <Dashboard meta={meta.data} />;
-  return <div className={s.boot}>{meta.error ?? "Loading…"}</div>;
+  return <div className={s.boot}>{meta.error ? meta.error.message : "Loading…"}</div>;
 }
