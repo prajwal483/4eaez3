@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { Area, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatGw, formatGwRange, formatGwTick } from "../../format";
 import type { HorizonRow } from "../../types";
@@ -17,15 +18,21 @@ const lines = (r: Row): TooltipLine[] => {
   return out;
 };
 
-export function HorizonChart({ rows, selected }: { rows: HorizonRow[]; selected: number }) {
-  const data: Row[] = rows.map((r) => ({
-    horizon: r.horizon_hours,
-    mae: r.metrics.mae_mw,
-    band: r.p10_error_mw != null && r.p90_error_mw != null ? [r.p10_error_mw, r.p90_error_mw] : null,
-  }));
-  const lows = rows.map((r) => r.p10_error_mw ?? 0);
-  const highs = rows.flatMap((r) => [r.p90_error_mw ?? 0, r.metrics.mae_mw ?? 0]);
-  const yTicks = niceTicks(Math.min(0, ...lows), Math.max(0, ...highs));
+function HorizonChartView({ rows, selected }: { rows: HorizonRow[]; selected: number }) {
+  const data = useMemo<Row[]>(
+    () =>
+      rows.map((r) => ({
+        horizon: r.horizon_hours,
+        mae: r.metrics.mae_mw,
+        band: r.p10_error_mw != null && r.p90_error_mw != null ? [r.p10_error_mw, r.p90_error_mw] : null,
+      })),
+    [rows],
+  );
+  const yTicks = useMemo(() => {
+    const lows = rows.map((r) => r.p10_error_mw ?? 0);
+    const highs = rows.flatMap((r) => [r.p90_error_mw ?? 0, r.metrics.mae_mw ?? 0]);
+    return niceTicks(Math.min(0, ...lows), Math.max(0, ...highs));
+  }, [rows]);
 
   return (
     <ResponsiveContainer width="100%" height={260}>
@@ -56,3 +63,5 @@ export function HorizonChart({ rows, selected }: { rows: HorizonRow[]; selected:
     </ResponsiveContainer>
   );
 }
+
+export const HorizonChart = memo(HorizonChartView);

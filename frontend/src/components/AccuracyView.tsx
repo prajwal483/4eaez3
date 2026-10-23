@@ -1,6 +1,7 @@
 import { api, errorReference } from "../api";
 import { useQuery } from "../data/useQuery";
 import { formatMw, formatPct } from "../format";
+import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import type { Metrics } from "../types";
 import { type Metric, MetricStrip } from "./accuracy/MetricStrip";
 import s from "./AccuracyView.module.css";
@@ -40,17 +41,20 @@ const accuracyMetrics = (m: Metrics): Metric[] => [
 ];
 
 export function AccuracyView({ horizon }: { horizon: number }) {
-  const accuracy = useQuery(`accuracy:${horizon}`, (signal) => api.accuracy(horizon, signal));
+  // The slider moves every frame; only fetch once the user pauses.
+  const requested = useDebouncedValue(horizon, 150);
+  const accuracy = useQuery(`accuracy:${requested}`, (signal) => api.accuracy(requested, signal));
   const profile = useQuery("accuracy-by-horizon", (signal) => api.byHorizon(signal));
   const a = accuracy.data;
-  const description = `Forecast available at least ${horizon} h before each hour, January 2026 delivery.`;
+  const updating = accuracy.loading || requested !== horizon;
+  const description = `Forecast available at least ${requested} h before each hour, January 2026 delivery.`;
 
   if (accuracy.error) {
     return (
       <>
         <PageHeader title={TITLE} />
         <ErrorPanel
-          message={`Couldn't load accuracy for the ${horizon} h horizon.`}
+          message={`Couldn't load accuracy for the ${requested} h horizon.`}
           reference={errorReference(accuracy.error)}
           onRetry={accuracy.reload}
         />
@@ -72,8 +76,8 @@ export function AccuracyView({ horizon }: { horizon: number }) {
 
   return (
     <>
-      <PageHeader title={TITLE} description={description} status={accuracy.loading ? "Updating…" : undefined} />
-      <div className={s.content} aria-busy={accuracy.loading}>
+      <PageHeader title={TITLE} description={description} status={updating ? "Updating…" : undefined} />
+      <div className={s.content} aria-busy={updating}>
         <MetricStrip metrics={accuracyMetrics(a.metrics)} />
         <Panel title="Actual vs forecast" legend={<ChartLegend items={SERIES_LEGEND} />}>
           <AccuracySeriesChart points={a.points} />

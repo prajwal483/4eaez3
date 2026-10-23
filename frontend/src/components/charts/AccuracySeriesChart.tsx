@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatDayHour, formatDayShort, formatGw, formatGwDelta, formatGwTick } from "../../format";
 import type { AccuracyPoint } from "../../types";
@@ -18,15 +19,17 @@ const lines = (r: SeriesRow): TooltipLine[] => [
   { label: "Error", value: formatGwDelta(r.error), color: chartColors.risk },
 ];
 
-export function AccuracySeriesChart({ points }: { points: AccuracyPoint[] }) {
-  const rows: SeriesRow[] = points.map((p) => ({
-    startTime: p.start_time,
-    forecast: p.forecast_mw,
-    actual: p.actual_mw,
-    error: p.error_mw,
-  }));
-  const max = Math.max(0, ...points.flatMap((p) => [p.forecast_mw, p.actual_mw ?? 0]));
-  const yTicks = niceTicks(0, max);
+function AccuracySeriesChartView({ points }: { points: AccuracyPoint[] }) {
+  const rows = useMemo<SeriesRow[]>(
+    () =>
+      points.map((p) => ({ startTime: p.start_time, forecast: p.forecast_mw, actual: p.actual_mw, error: p.error_mw })),
+    [points],
+  );
+  const yTicks = useMemo(
+    () => niceTicks(0, Math.max(0, ...points.flatMap((p) => [p.forecast_mw, p.actual_mw ?? 0]))),
+    [points],
+  );
+  const xTicks = useMemo(() => weeklyTicks(rows.map((r) => r.startTime)), [rows]);
 
   return (
     <ResponsiveContainer width="100%" height={300}>
@@ -34,7 +37,7 @@ export function AccuracySeriesChart({ points }: { points: AccuracyPoint[] }) {
         <CartesianGrid {...gridProps} />
         <XAxis
           dataKey="startTime"
-          ticks={weeklyTicks(rows.map((r) => r.startTime))}
+          ticks={xTicks}
           interval={0}
           tickFormatter={formatDayShort}
           {...axisProps}
@@ -57,3 +60,5 @@ export function AccuracySeriesChart({ points }: { points: AccuracyPoint[] }) {
     </ResponsiveContainer>
   );
 }
+
+export const AccuracySeriesChart = memo(AccuracySeriesChartView);

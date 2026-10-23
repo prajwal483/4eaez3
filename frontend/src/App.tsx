@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { api } from "./api";
 import s from "./App.module.css";
 import { AccuracyView } from "./components/AccuracyView";
@@ -7,9 +7,11 @@ import { GATE_OPTIONS } from "./components/controls/gateOptions";
 import { HorizonSlider } from "./components/controls/HorizonSlider";
 import { Select } from "./components/controls/Select";
 import { DecisionView } from "./components/DecisionView";
+import { ErrorBoundary } from "./components/feedback/ErrorBoundary";
 import { TopBar } from "./components/layout/TopBar";
 import { useQuery } from "./data/useQuery";
 import { deliveryDates } from "./format";
+import { useArrowKeys } from "./hooks/useArrowKeys";
 import { useViewState } from "./state/useViewState";
 import type { ViewLimits } from "./state/viewState";
 import type { Meta } from "./types";
@@ -29,6 +31,17 @@ function Dashboard({ meta }: { meta: Meta }) {
     [days, meta],
   );
   const [view, update] = useViewState(limits);
+  const dayIndex = days.indexOf(view.day);
+  const stepDay = useCallback(
+    (delta: number) => {
+      const next = days[dayIndex + delta];
+      if (next) update({ day: next });
+    },
+    [days, dayIndex, update],
+  );
+  const previousDay = useCallback(() => stepDay(-1), [stepDay]);
+  const nextDay = useCallback(() => stepDay(1), [stepDay]);
+  useArrowKeys(previousDay, nextDay, view.tab === "decision");
 
   const controls =
     view.tab === "decision" ? (
@@ -50,11 +63,13 @@ function Dashboard({ meta }: { meta: Meta }) {
     <>
       <TopBar tab={view.tab} onTabChange={(tab) => update({ tab })} controls={controls} />
       <main className={s.main}>
-        {view.tab === "decision" ? (
-          <DecisionView deliveryDate={view.day} gateTime={view.gate} />
-        ) : (
-          <AccuracyView horizon={view.horizon} />
-        )}
+        <ErrorBoundary>
+          {view.tab === "decision" ? (
+            <DecisionView deliveryDate={view.day} gateTime={view.gate} />
+          ) : (
+            <AccuracyView horizon={view.horizon} />
+          )}
+        </ErrorBoundary>
       </main>
       <footer className={s.footer}>
         Data: Elexon BMRS — FUELHH outturn (fuel type WIND) and WINDFOR forecasts, {meta.forecast_runs} forecast runs.

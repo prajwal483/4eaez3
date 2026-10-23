@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Scatter, Tooltip, XAxis, YAxis } from "recharts";
 import { formatDayHour, formatGw, formatGwRange, formatGwTick } from "../../format";
 import type { DecisionPoint } from "../../types";
@@ -28,11 +29,13 @@ function tooltipLines(r: DecisionRow): TooltipLine[] {
   return lines;
 }
 
-export function DecisionChart({ points }: { points: DecisionPoint[] }) {
-  const rows = toDecisionRows(points);
-  const max = Math.max(0, ...points.flatMap((p) => [p.forecast_mw, p.actual_mw ?? 0, p.high_mw ?? 0]));
-  const yTicks = niceTicks(0, max);
-  const xTicks = rows.filter((_, i) => i % 3 === 0).map((r) => r.time);
+function DecisionChartView({ points }: { points: DecisionPoint[] }) {
+  const rows = useMemo(() => toDecisionRows(points), [points]);
+  const yTicks = useMemo(
+    () => niceTicks(0, Math.max(0, ...points.flatMap((p) => [p.forecast_mw, p.actual_mw ?? 0, p.high_mw ?? 0]))),
+    [points],
+  );
+  const xTicks = useMemo(() => rows.filter((_, i) => i % 3 === 0).map((r) => r.time), [rows]);
 
   return (
     <ResponsiveContainer width="100%" height={340}>
@@ -59,3 +62,5 @@ export function DecisionChart({ points }: { points: DecisionPoint[] }) {
     </ResponsiveContainer>
   );
 }
+
+export const DecisionChart = memo(DecisionChartView);
