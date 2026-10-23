@@ -21,3 +21,5 @@ MAX_HORIZON_HOURS = 48
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = BACKEND_DIR / "data"
 STATIC_DIR = BACKEND_DIR / "static"
+
+API_VERSION = "1.0.0"
