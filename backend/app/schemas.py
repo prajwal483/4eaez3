@@ -1,4 +1,5 @@
 """API response contract. Mirrored by frontend/src/types.ts."""
+
 from datetime import date, datetime
 from typing import Literal
 

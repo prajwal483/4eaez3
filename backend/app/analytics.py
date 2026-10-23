@@ -3,6 +3,7 @@
 Sign convention: error_mw = forecast_mw - actual_mw. Positive error means wind was
 over-forecast, i.e. the buyer would be short and must procure more.
 """
+
 import math
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -47,15 +48,22 @@ def error_metrics(joined: pd.DataFrame) -> dict:
     df = joined.dropna(subset=["actual_mw"])
     n = len(df)
     if n == 0:
-        return {"n": 0, "mae_mw": None, "rmse_mw": None, "bias_mw": None,
-                "wape_pct": None, "p50_abs_mw": None, "p90_abs_mw": None}
+        return {
+            "n": 0,
+            "mae_mw": None,
+            "rmse_mw": None,
+            "bias_mw": None,
+            "wape_pct": None,
+            "p50_abs_mw": None,
+            "p90_abs_mw": None,
+        }
     err = df["error_mw"]
     abs_err = err.abs()
     total_actual = df["actual_mw"].abs().sum()
     return {
         "n": int(n),
         "mae_mw": _r(abs_err.mean()),
-        "rmse_mw": _r(math.sqrt((err ** 2).mean())),
+        "rmse_mw": _r(math.sqrt((err**2).mean())),
         "bias_mw": _r(err.mean()),
         "wape_pct": _r(abs_err.sum() / total_actual * 100) if total_actual else None,
         "p50_abs_mw": _r(abs_err.quantile(0.5)),
@@ -132,13 +140,15 @@ def decision_view(forecasts: pd.DataFrame, actuals: pd.DataFrame, delivery_date:
             # actual = forecast - error, so the high error quantile gives the low generation bound.
             low = max(0.0, row.forecast_mw - band.high_error_mw)
             high = row.forecast_mw - band.low_error_mw
-        points.append({
-            "start_time": row.start_time.to_pydatetime(),
-            "forecast_mw": _r(row.forecast_mw),
-            "actual_mw": _r(row.actual_mw),
-            "low_mw": _r(low),
-            "high_mw": _r(high),
-        })
+        points.append(
+            {
+                "start_time": row.start_time.to_pydatetime(),
+                "forecast_mw": _r(row.forecast_mw),
+                "actual_mw": _r(row.actual_mw),
+                "low_mw": _r(low),
+                "high_mw": _r(high),
+            }
+        )
 
     complete_actuals = len(joined) > 0 and bool(joined["actual_mw"].notna().all())
     return {
@@ -154,9 +164,7 @@ def decision_view(forecasts: pd.DataFrame, actuals: pd.DataFrame, delivery_date:
     }
 
 
-def band_calibration(
-    forecasts: pd.DataFrame, actuals: pd.DataFrame, first: date, last: date, gate_time: time
-) -> dict:
+def band_calibration(forecasts: pd.DataFrame, actuals: pd.DataFrame, first: date, last: date, gate_time: time) -> dict:
     """How often outturn landed inside / below / above the decision-view P10-P90 range (nominal 80/10/10)."""
     inside = below = above = 0
     day = first
@@ -212,10 +220,12 @@ def horizon_profile(
         p10 = p90 = None
         if len(rows):
             p10, p90 = rows["error_mw"].quantile([0.1, 0.9])
-        out.append({
-            "horizon_hours": h,
-            "metrics": error_metrics(rows),
-            "p10_error_mw": _r(p10),
-            "p90_error_mw": _r(p90),
-        })
+        out.append(
+            {
+                "horizon_hours": h,
+                "metrics": error_metrics(rows),
+                "p10_error_mw": _r(p10),
+                "p90_error_mw": _r(p90),
+            }
+        )
     return out
