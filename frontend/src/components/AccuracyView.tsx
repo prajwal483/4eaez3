@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Area,
   Bar,
@@ -15,7 +14,6 @@ import {
 } from "recharts";
 import { api } from "../api";
 import { formatDayHourUtc, formatMw, formatPct } from "../format";
-import type { Meta } from "../types";
 import { useAsync } from "../useAsync";
 import { MetricCards } from "./MetricCards";
 
@@ -23,8 +21,7 @@ const gw = (v: number) => `${(v / 1000).toFixed(0)} GW`;
 const mwOrRange = (v: unknown): string =>
   Array.isArray(v) ? `${formatMw(v[0] as number)} – ${formatMw(v[1] as number)}` : formatMw(v as number);
 
-export function AccuracyView({ meta }: { meta: Meta }) {
-  const [horizon, setHorizon] = useState(24);
+export function AccuracyView({ horizon }: { horizon: number }) {
   const accuracy = useAsync(() => api.accuracy(horizon), [horizon]);
   const profile = useAsync(() => api.byHorizon(), []);
   const a = accuracy.data;
@@ -40,21 +37,6 @@ export function AccuracyView({ meta }: { meta: Meta }) {
 
   return (
     <section>
-      <div className="controls">
-        <label htmlFor="horizon">
-          Forecast horizon: <strong>{horizon} h</strong> ahead
-        </label>
-        <input
-          id="horizon"
-          type="range"
-          min={0}
-          max={meta.max_horizon_hours}
-          step={1}
-          value={horizon}
-          onChange={(e) => setHorizon(Number(e.target.value))}
-        />
-        <span className="muted">For every hour, uses the latest forecast published at least {horizon} h earlier.</span>
-      </div>
       {accuracy.error && <div className="error">{accuracy.error}</div>}
       {m && (
         <MetricCards
@@ -73,13 +55,13 @@ export function AccuracyView({ meta }: { meta: Meta }) {
           <p>Forecast shown is what was available {horizon} h before each hour.</p>
           <ResponsiveContainer width="100%" height={320}>
             <LineChart data={series}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e6e5e1" />
               <XAxis dataKey="time" minTickGap={60} />
               <YAxis tickFormatter={gw} />
               <Tooltip formatter={mwOrRange} />
               <Legend />
-              <Line dataKey="actual" name="Actual" stroke="#16a34a" dot={false} strokeWidth={1.5} />
-              <Line dataKey="forecast" name="Forecast" stroke="#2563eb" dot={false} strokeWidth={1.5} />
+              <Line dataKey="actual" name="Actual" stroke="#3d3d3a" dot={false} strokeWidth={1.5} />
+              <Line dataKey="forecast" name="Forecast" stroke="#1f5fbf" dot={false} strokeWidth={1.5} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -91,11 +73,11 @@ export function AccuracyView({ meta }: { meta: Meta }) {
             <p>Forecast − actual, hourly. Right of zero means wind came in lower than forecast.</p>
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={bins}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e6e5e1" />
                 <XAxis dataKey="label" minTickGap={20} />
                 <YAxis allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="count" name="Hours" fill="#6366f1" />
+                <Bar dataKey="count" name="Hours" fill="#b4b2a9" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -106,13 +88,13 @@ export function AccuracyView({ meta }: { meta: Meta }) {
             <p>MAE and P10–P90 signed error by forecast horizon (hours before delivery).</p>
             <ResponsiveContainer width="100%" height={260}>
               <ComposedChart data={byHorizon}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e6e5e1" />
                 <XAxis dataKey="horizon" unit=" h" />
                 <YAxis tickFormatter={gw} />
                 <Tooltip formatter={mwOrRange} />
                 <Legend />
-                <Area dataKey="band" name="P10–P90 error" fill="#fcd34d" stroke="none" fillOpacity={0.5} />
-                <Line dataKey="mae" name="MAE" stroke="#dc2626" strokeWidth={2} />
+                <Area dataKey="band" name="P10–P90 error" fill="rgba(31, 95, 191, 0.12)" stroke="none" />
+                <Line dataKey="mae" name="MAE" stroke="#1f5fbf" strokeWidth={2} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
