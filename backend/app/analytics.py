@@ -6,7 +6,7 @@ over-forecast, i.e. the buyer would be short and must procure more.
 import math
 from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, time, timedelta
 
 import numpy as np
 import pandas as pd
@@ -106,19 +106,27 @@ def error_band(
     return ErrorBand(float(lo), float(hi), n)
 
 
-def decision_view(forecasts: pd.DataFrame, actuals: pd.DataFrame, delivery_date: date, gate_hour_utc: int) -> dict:
+def _gate_closure(delivery_date: date, gate_time: time) -> pd.Timestamp:
+    day_start = pd.Timestamp(delivery_date.isoformat(), tz="UTC")
+    return day_start - pd.Timedelta(days=1) + pd.Timedelta(hours=gate_time.hour, minutes=gate_time.minute)
+
+
+def decision_view(forecasts: pd.DataFrame, actuals: pd.DataFrame, delivery_date: date, gate_time: time) -> dict:
     day_start = pd.Timestamp(delivery_date.isoformat(), tz="UTC")
     day_end = day_start + pd.Timedelta(days=1)
-    cutoff = day_start - pd.Timedelta(days=1) + pd.Timedelta(hours=gate_hour_utc)
+    cutoff = _gate_closure(delivery_date, gate_time)
 
     eligible = forecasts[forecasts["publish_time"] <= cutoff]
     latest = within(eligible, day_start, day_end)
     latest = latest.sort_values("publish_time").drop_duplicates("start_time", keep="last").sort_values("start_time")
     joined = join_actuals(latest, actuals)
-    band = error_band(forecasts, actuals, cutoff, (day_start - cutoff) / HOUR)
 
     points = []
+    band_samples = []
     for row in joined.itertuples(index=False):
+        # Error grows with lead time, so each hour's range comes from past errors at its own lead.
+        band = error_band(forecasts, actuals, cutoff, (row.start_time - cutoff) / HOUR)
+        band_samples.append(band.samples)
         low = high = None
         if band.low_error_mw is not None:
             # actual = forecast - error, so the high error quantile gives the low generation bound.
@@ -137,13 +145,35 @@ def decision_view(forecasts: pd.DataFrame, actuals: pd.DataFrame, delivery_date:
         "delivery_date": delivery_date,
         "gate_closure": cutoff.to_pydatetime(),
         "forecast_published_at": latest["publish_time"].max().to_pydatetime() if len(latest) else None,
-        "band_samples": band.samples,
+        "band_samples": min(band_samples, default=0),
         "points": points,
         # WINDFOR is hourly, so summing MW over the points gives MWh.
         "forecast_energy_mwh": _r(joined["forecast_mw"].sum()),
         "actual_energy_mwh": _r(joined["actual_mw"].sum()) if complete_actuals else None,
         "metrics": error_metrics(joined),
     }
+
+
+def band_calibration(
+    forecasts: pd.DataFrame, actuals: pd.DataFrame, first: date, last: date, gate_time: time
+) -> dict:
+    """How often outturn landed inside / below / above the decision-view P10-P90 range (nominal 80/10/10)."""
+    inside = below = above = 0
+    day = first
+    while day <= last:
+        for p in decision_view(forecasts, actuals, day, gate_time)["points"]:
+            if p["low_mw"] is None or p["actual_mw"] is None:
+                continue
+            if p["actual_mw"] < p["low_mw"]:
+                below += 1
+            elif p["actual_mw"] > p["high_mw"]:
+                above += 1
+            else:
+                inside += 1
+        day += timedelta(days=1)
+    n = inside + below + above
+    pct = (lambda k: _r(k / n * 100)) if n else (lambda k: None)
+    return {"n": n, "inside_pct": pct(inside), "below_p10_pct": pct(below), "above_p90_pct": pct(above)}
 
 
 def accuracy_view(

@@ -59,7 +59,7 @@ export interface HorizonRow {
 export interface Meta {
   first_delivery_date: string;
   last_delivery_date: string;
-  default_gate_hour_utc: number;
+  default_gate_time_utc: string; // HH:MM
   max_horizon_hours: number;
   forecast_runs: number;
   data_source: "snapshot" | "live";

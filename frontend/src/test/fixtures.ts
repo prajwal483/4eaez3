@@ -7,7 +7,7 @@ export const metricsFixture: Metrics = {
 export const metaFixture: Meta = {
   first_delivery_date: "2026-01-02",
   last_delivery_date: "2026-02-01",
-  default_gate_hour_utc: 11,
+  default_gate_time_utc: "09:20",
   max_horizon_hours: 48,
   forecast_runs: 325,
   data_source: "snapshot",
@@ -15,8 +15,8 @@ export const metaFixture: Meta = {
 
 export const decisionFixture: DecisionResponse = {
   delivery_date: "2026-01-02",
-  gate_closure: "2026-01-01T11:00:00Z",
-  forecast_published_at: "2026-01-01T09:30:00Z",
+  gate_closure: "2026-01-01T09:20:00Z",
+  forecast_published_at: "2026-01-01T07:30:00Z",
   band_samples: 312,
   points: [
     { start_time: "2026-01-02T00:00:00Z", forecast_mw: 1000, actual_mw: 950, low_mw: 800, high_mw: 1100 },

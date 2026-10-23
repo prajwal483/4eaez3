@@ -1,6 +1,6 @@
 """HTTP layer: validates inputs, delegates to analytics, serves the built frontend."""
 from collections.abc import Callable
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app import analytics
 from app.config import (
-    DEFAULT_GATE_CLOSURE_HOUR_UTC,
+    DEFAULT_GATE_CLOSURE_UTC,
     FIRST_DELIVERY_DATE,
     LAST_DELIVERY_DATE,
     MAX_HORIZON_HOURS,
@@ -47,7 +47,7 @@ def create_app(
         return Meta(
             first_delivery_date=FIRST_DELIVERY_DATE,
             last_delivery_date=LAST_DELIVERY_DATE,
-            default_gate_hour_utc=DEFAULT_GATE_CLOSURE_HOUR_UTC,
+            default_gate_time_utc=DEFAULT_GATE_CLOSURE_UTC.strftime("%H:%M"),
             max_horizon_hours=MAX_HORIZON_HOURS,
             forecast_runs=int(ds.forecasts["publish_time"].nunique()),
             data_source=ds.source,
@@ -56,7 +56,7 @@ def create_app(
     @app.get("/api/decision", response_model=DecisionResponse)
     def decision(
         delivery_date: date,
-        gate_hour: int = Query(DEFAULT_GATE_CLOSURE_HOUR_UTC, ge=0, le=23),
+        gate_time: time = Query(DEFAULT_GATE_CLOSURE_UTC, description="Gate closure on D-1, HH:MM UTC"),
     ) -> dict:
         if not FIRST_DELIVERY_DATE <= delivery_date <= LAST_DELIVERY_DATE:
             raise HTTPException(
@@ -64,7 +64,7 @@ def create_app(
                 detail=f"delivery_date must be between {FIRST_DELIVERY_DATE} and {LAST_DELIVERY_DATE}",
             )
         ds = dataset_provider()
-        return analytics.decision_view(ds.forecasts, ds.actuals, delivery_date, gate_hour)
+        return analytics.decision_view(ds.forecasts, ds.actuals, delivery_date, gate_time)
 
     @app.get("/api/accuracy", response_model=AccuracyResponse)
     def accuracy(

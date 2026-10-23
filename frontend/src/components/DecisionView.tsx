@@ -6,7 +6,12 @@ import type { DecisionResponse, Meta } from "../types";
 import { useAsync } from "../useAsync";
 import { type Card, MetricCards } from "./MetricCards";
 
-const HOURS = Array.from({ length: 24 }, (_, h) => h);
+// GB day-ahead auctions since 2021 (UK time = UTC in January).
+const GATES = [
+  { value: "09:20", label: "09:20 UTC · EPEX 60-min auction" },
+  { value: "09:50", label: "09:50 UTC · N2EX hourly auction" },
+  { value: "15:30", label: "15:30 UTC · EPEX 30-min auction" },
+];
 
 function shortfallAtRiskMwh(d: DecisionResponse): number | null {
   // Energy to cover if wind lands at the low (P10) bound; points are hourly so summed MW are MWh.
@@ -37,8 +42,8 @@ const mwOrRange = (v: unknown): string =>
 
 export function DecisionView({ meta }: { meta: Meta }) {
   const [deliveryDate, setDeliveryDate] = useState(meta.first_delivery_date);
-  const [gateHour, setGateHour] = useState(meta.default_gate_hour_utc);
-  const decision = useAsync(() => api.decision(deliveryDate, gateHour), [deliveryDate, gateHour]);
+  const [gateTime, setGateTime] = useState(meta.default_gate_time_utc);
+  const decision = useAsync(() => api.decision(deliveryDate, gateTime), [deliveryDate, gateTime]);
   const d = decision.data;
 
   const rows = d?.points.map((p) => ({
@@ -61,9 +66,9 @@ export function DecisionView({ meta }: { meta: Meta }) {
         </label>
         <label>
           Gate closure on D-1{" "}
-          <select value={gateHour} onChange={(e) => setGateHour(Number(e.target.value))}>
-            {HOURS.map((h) => (
-              <option key={h} value={h}>{`${String(h).padStart(2, "0")}:00 UTC`}</option>
+          <select value={gateTime} onChange={(e) => setGateTime(e.target.value)}>
+            {GATES.map((g) => (
+              <option key={g.value} value={g.value}>{g.label}</option>
             ))}
           </select>
         </label>
@@ -76,7 +81,7 @@ export function DecisionView({ meta }: { meta: Meta }) {
           <div className="panel">
             <h2>Wind forecast available at gate closure vs outturn</h2>
             <p>
-              Shaded band: likely range (P10–P90) based on errors from the last 14 days at the same lead time,
+              Shaded band: likely range (P10–P90) based on errors from the last 14 days at each hour's own lead time,
               using only outturn published before gate closure.
             </p>
             <ResponsiveContainer width="100%" height={360}>

@@ -65,7 +65,7 @@ class HorizonRow(BaseModel):
 class Meta(BaseModel):
     first_delivery_date: date
     last_delivery_date: date
-    default_gate_hour_utc: int
+    default_gate_time_utc: str
     max_horizon_hours: int
     forecast_runs: int
     data_source: Literal["snapshot", "live"]
