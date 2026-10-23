@@ -1,0 +1,9 @@
+.claude/settings.local.json
+__pycache__/
+*.pyc
+backend/.venv/
+backend/static/
+.pytest_cache/
+frontend/node_modules/
+frontend/dist/
+.env
