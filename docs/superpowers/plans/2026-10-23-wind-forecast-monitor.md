@@ -1,5 +1,12 @@
 # GridBrick Wind Forecast Monitor Implementation Plan
 
+> **Status: implemented, with later changes.** This is the original build plan, kept for reference. The shipped code differs in three places:
+> - **Deployment:** Vercel (free tier: `api/index.py`, `vercel.json`) instead of Heroku. `heroku.yml` was dropped; Docker is kept for local runs.
+> - **Gate closure:** an `HH:MM` time defaulting to **09:20 UTC** (the post-2021 EPEX GB auction) instead of 11:00. The API parameter is `gate_time`.
+> - **Decision band:** computed per delivery hour at that hour's own lead time, with a calibration check (`backend/scripts/calibration.py`).
+>
+> See README.md for current behaviour.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build a web app for a UK utility's day-ahead power buying team. It shows the latest GB national wind forecast available at the day-ahead gate closure, and it measures how accurate those forecasts were for January 2026 decisions.
@@ -19,7 +26,7 @@
 - README must contain: details of the files and directories, how to start the app, the link to the deployed app, and an explicit statement that AI tools were used.
 - The public GitHub repo must have an anonymous random name (e.g. `kjhwr`).
 - Total effort budget: ≤ 16 hours.
-- Working directory: `C:\Users\prajwal\GRIDBRICK` (Git Bash on Windows). Activate the Python venv with `source backend/.venv/Scripts/activate`.
+- Working directory: the repository root (Git Bash on Windows). Activate the Python venv with `source backend/.venv/Scripts/activate`.
 
 ## File Structure
 
@@ -75,7 +82,7 @@ GRIDBRICK/
 - [ ] **Step 1: Initialise git and dependency files**
 
 ```bash
-cd /c/Users/prajwal/GRIDBRICK && git init -b main
+git init -b main
 ```
 
 `.gitignore`:
