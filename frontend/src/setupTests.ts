@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/vitest";
+import { clearQueryCache } from "./data/useQuery";
 
 // Recharts' ResponsiveContainer needs ResizeObserver, which jsdom lacks.
 class ResizeObserverStub {
@@ -7,3 +8,8 @@ class ResizeObserverStub {
   disconnect() {}
 }
 globalThis.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver;
+
+afterEach(() => {
+  clearQueryCache();
+  window.history.replaceState(null, "", "/");
+});

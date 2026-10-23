@@ -8,7 +8,12 @@
   color: var(--danger);
   border-radius: var(--radius-panel);
 }
+.reference {
+  margin-top: 2px;
+  font-size: var(--text-xs);
+}
 .retry {
+  flex-shrink: 0;
   height: 34px;
   padding: 0 var(--space-4);
   border: 1px solid currentColor;
