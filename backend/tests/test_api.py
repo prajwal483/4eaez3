@@ -102,3 +102,18 @@ def test_legacy_unversioned_paths_still_work_but_are_hidden(client):
     paths = client.get("/openapi.json").json()["paths"]
     assert "/api/v1/decision" in paths
     assert "/api/decision" not in paths
+
+
+def test_head_mirrors_get_without_a_body(client):
+    get = client.get("/api/v1/meta")
+    head = client.head("/api/v1/meta")
+    assert head.status_code == 200
+    assert head.content == b""
+    assert head.headers["Content-Length"] == get.headers["Content-Length"]
+    assert head.headers["Cache-Control"] == get.headers["Cache-Control"]
+
+
+def test_head_keeps_error_status(client):
+    res = client.head("/api/v1/decision", params={"delivery_date": "2026-03-01"})
+    assert res.status_code == 400
+    assert res.content == b""
