@@ -1,7 +1,7 @@
-import { api } from "../api";
+import { api, errorReference } from "../api";
+import { useQuery } from "../data/useQuery";
 import { formatMw, formatPct } from "../format";
 import type { Metrics } from "../types";
-import { useAsync } from "../useAsync";
 import { type Metric, MetricStrip } from "./accuracy/MetricStrip";
 import s from "./AccuracyView.module.css";
 import { AccuracySeriesChart } from "./charts/AccuracySeriesChart";
@@ -40,8 +40,8 @@ const accuracyMetrics = (m: Metrics): Metric[] => [
 ];
 
 export function AccuracyView({ horizon }: { horizon: number }) {
-  const accuracy = useAsync(() => api.accuracy(horizon), [horizon]);
-  const profile = useAsync(() => api.byHorizon(), []);
+  const accuracy = useQuery(`accuracy:${horizon}`, (signal) => api.accuracy(horizon, signal));
+  const profile = useQuery("accuracy-by-horizon", (signal) => api.byHorizon(signal));
   const a = accuracy.data;
   const description = `Forecast available at least ${horizon} h before each hour, January 2026 delivery.`;
 
@@ -49,7 +49,11 @@ export function AccuracyView({ horizon }: { horizon: number }) {
     return (
       <>
         <PageHeader title={TITLE} />
-        <ErrorPanel message={`Couldn't load accuracy for the ${horizon} h horizon.`} onRetry={accuracy.reload} />
+        <ErrorPanel
+          message={`Couldn't load accuracy for the ${horizon} h horizon.`}
+          reference={errorReference(accuracy.error)}
+          onRetry={accuracy.reload}
+        />
       </>
     );
   }
