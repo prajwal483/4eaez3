@@ -17,7 +17,7 @@ def test_meta(client):
     body = client.get("/api/meta").json()
     assert body["first_delivery_date"] == "2026-01-02"
     assert body["last_delivery_date"] == "2026-02-01"
-    assert body["default_gate_hour_utc"] == 11
+    assert body["default_gate_time_utc"] == "09:20"
     assert body["max_horizon_hours"] == 48
     assert body["forecast_runs"] == 16
     assert body["data_source"] == "snapshot"
@@ -27,7 +27,7 @@ def test_decision(client):
     res = client.get("/api/decision", params={"delivery_date": "2026-01-03"})
     assert res.status_code == 200
     body = res.json()
-    assert body["gate_closure"].startswith("2026-01-02T11:00:00")
+    assert body["gate_closure"].startswith("2026-01-02T09:20:00")
     assert body["forecast_published_at"].startswith("2026-01-02T06:00:00")
     assert len(body["points"]) == 24
     assert body["points"][0]["forecast_mw"] == 1180.0
@@ -40,8 +40,13 @@ def test_decision_rejects_date_outside_window(client):
     assert "2026-01-02" in res.json()["detail"]
 
 
-def test_decision_rejects_bad_gate_hour(client):
-    res = client.get("/api/decision", params={"delivery_date": "2026-01-03", "gate_hour": 24})
+def test_decision_accepts_gate_time(client):
+    res = client.get("/api/decision", params={"delivery_date": "2026-01-03", "gate_time": "09:50"})
+    assert res.json()["gate_closure"].startswith("2026-01-02T09:50:00")
+
+
+def test_decision_rejects_bad_gate_time(client):
+    res = client.get("/api/decision", params={"delivery_date": "2026-01-03", "gate_time": "25:00"})
     assert res.status_code == 422
 
 

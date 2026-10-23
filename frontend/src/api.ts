@@ -12,8 +12,8 @@ async function getJson<T>(path: string, params: Record<string, string | number> 
 
 export const api = {
   meta: () => getJson<Meta>("/api/meta"),
-  decision: (deliveryDate: string, gateHour: number) =>
-    getJson<DecisionResponse>("/api/decision", { delivery_date: deliveryDate, gate_hour: gateHour }),
+  decision: (deliveryDate: string, gateTime: string) =>
+    getJson<DecisionResponse>("/api/decision", { delivery_date: deliveryDate, gate_time: gateTime }),
   accuracy: (horizon: number) => getJson<AccuracyResponse>("/api/accuracy", { horizon }),
   byHorizon: () => getJson<HorizonRow[]>("/api/accuracy/by-horizon"),
 };

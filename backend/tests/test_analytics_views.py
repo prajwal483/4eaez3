@@ -1,8 +1,8 @@
-from datetime import date
+from datetime import date, time
 
 import pandas as pd
 
-from app.analytics import accuracy_view, decision_view, error_band, horizon_profile
+from app.analytics import accuracy_view, band_calibration, decision_view, error_band, horizon_profile
 
 T = pd.Timestamp
 
@@ -22,7 +22,7 @@ def test_error_band_none_when_too_little_history(dataset):
 
 
 def test_decision_view_uses_latest_run_before_gate(dataset):
-    view = decision_view(dataset.forecasts, dataset.actuals, date(2026, 1, 3), 11)
+    view = decision_view(dataset.forecasts, dataset.actuals, date(2026, 1, 3), time(11, 0))
     assert view["gate_closure"] == T("2026-01-02T11:00Z")
     assert view["forecast_published_at"] == T("2026-01-02T06:00Z")
     assert len(view["points"]) == 24
@@ -33,21 +33,31 @@ def test_decision_view_uses_latest_run_before_gate(dataset):
     assert view["forecast_energy_mwh"] == 31080.0
     assert view["actual_energy_mwh"] == 24000.0
     assert view["metrics"]["mae_mw"] == 295.0
-    # Only 46 known pairs before this gate closure (< 48), so no band yet.
-    assert view["band_samples"] == 46
+    # Each hour's band uses its own lead time (13..36 h); the 36 h lead has only 23 known pairs (< 48).
+    assert view["band_samples"] == 23
     assert first["low_mw"] is None and first["high_mw"] is None
 
 
-def test_decision_view_band_brackets_forecast_minus_error(dataset):
-    view = decision_view(dataset.forecasts, dataset.actuals, date(2026, 1, 4), 11)
-    assert view["band_samples"] == 70
-    for p in view["points"]:
-        assert p["forecast_mw"] - 180 <= p["low_mw"] <= p["high_mw"] <= p["forecast_mw"] - 130
+def test_decision_view_band_uses_each_hours_lead_time(dataset):
+    view = decision_view(dataset.forecasts, dataset.actuals, date(2026, 1, 4), time(11, 0))
+    # Hour k is 13+k h after gate closure; known pairs at lead L number 83-L, so 23:00 (L=36) has 47 < 48.
+    assert view["band_samples"] == 47
+    for k, p in enumerate(view["points"][:23]):
+        lead = 13 + k
+        # At lead L the synthetic error is 10*L .. 10*(L+5) MW.
+        assert p["forecast_mw"] - 10 * (lead + 5) <= p["low_mw"] <= p["high_mw"] <= p["forecast_mw"] - 10 * lead
+    assert view["points"][23]["low_mw"] is None
+
+
+def test_decision_view_gate_minutes_pick_earlier_run(dataset):
+    view = decision_view(dataset.forecasts, dataset.actuals, date(2026, 1, 3), time(5, 59))
+    assert view["gate_closure"] == T("2026-01-02T05:59Z")
+    assert view["forecast_published_at"] == T("2026-01-02T00:00Z")
 
 
 def test_decision_view_partial_actuals_gives_none_energy(dataset):
     partial = dataset.actuals[dataset.actuals["start_time"] < T("2026-01-03T12:00Z")]
-    view = decision_view(dataset.forecasts, partial, date(2026, 1, 3), 11)
+    view = decision_view(dataset.forecasts, partial, date(2026, 1, 3), time(11, 0))
     assert len(view["points"]) == 24
     assert view["actual_energy_mwh"] is None
     assert view["metrics"]["n"] == 12
@@ -71,3 +81,9 @@ def test_horizon_profile_error_grows_with_horizon(dataset):
     assert rows[0]["metrics"]["mae_mw"] == 25.0
     assert rows[1]["metrics"]["mae_mw"] == 265.0
     assert rows[1]["p10_error_mw"] <= rows[1]["p90_error_mw"]
+
+
+def test_band_calibration_counts_hours_with_a_band(dataset):
+    cal = band_calibration(dataset.forecasts, dataset.actuals, date(2026, 1, 3), date(2026, 1, 4), time(11, 0))
+    assert cal["n"] == 23
+    assert round(cal["inside_pct"] + cal["below_p10_pct"] + cal["above_p90_pct"], 1) == 100.0
