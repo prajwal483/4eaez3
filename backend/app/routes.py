@@ -1,7 +1,4 @@
-"""Version 1 of the HTTP API. Handlers stay thin: validate input, call analytics, return a schema.
-
-Handlers are plain `def`: the work is CPU-bound pandas, which FastAPI runs in its threadpool.
-"""
+# Plain `def` handlers on purpose: the work is CPU-bound pandas, which FastAPI runs in a threadpool.
 
 from datetime import date, time, timedelta
 from typing import Annotated
@@ -35,7 +32,6 @@ EndDate = Annotated[date | None, Query(description="Last delivery day to include
 
 
 def _window(start: date | None, end: date | None) -> tuple[pd.Timestamp, pd.Timestamp]:
-    """Inclusive date range -> half-open UTC timestamp range."""
     start = start or FIRST_DELIVERY_DATE
     end = end or LAST_DELIVERY_DATE
     if start > end:

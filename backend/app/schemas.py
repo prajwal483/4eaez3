@@ -1,5 +1,3 @@
-"""API response contract. The frontend types are generated from this via OpenAPI."""
-
 from datetime import date, datetime
 from typing import Literal
 

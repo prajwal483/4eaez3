@@ -1,5 +1,3 @@
-"""Where the data comes from: a committed snapshot of the January 2026 window, or Elexon live."""
-
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -52,7 +50,6 @@ def fetch_live(client: httpx.Client) -> Dataset:
 
 @lru_cache(maxsize=1)
 def get_dataset() -> Dataset:
-    """January 2026 is history, so the snapshot is authoritative; live fetch is the fallback."""
     if (SNAPSHOT_DIR / ACTUALS_FILE).exists() and (SNAPSHOT_DIR / FORECASTS_FILE).exists():
         return load_snapshot(SNAPSHOT_DIR)
     with httpx.Client() as client:

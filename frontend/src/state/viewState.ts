@@ -15,7 +15,6 @@ export interface ViewLimits {
   defaultHorizon: number;
 }
 
-/** Parse the URL query into a view, falling back to defaults for anything missing or out of range. */
 export function readViewState(search: string, limits: ViewLimits): ViewState {
   const q = new URLSearchParams(search);
   const day = q.get("day") ?? "";
