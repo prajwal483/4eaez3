@@ -7,11 +7,14 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import API_VERSION, STATIC_DIR
 from app.errors import install_error_handlers
+from app.observability import configure_logging, install_observability
 from app.routes import router
 
 # The data is a fixed January 2026 snapshot, so successful reads can be cached; the CDN keeps them for a day
 # and a new deployment invalidates them.
 CACHE_CONTROL = "public, max-age=300, s-maxage=86400"
+
+configure_logging()
 
 
 def create_app(static_dir: Path | None = STATIC_DIR) -> FastAPI:
@@ -37,6 +40,7 @@ def create_app(static_dir: Path | None = STATIC_DIR) -> FastAPI:
             response.headers["Cache-Control"] = CACHE_CONTROL
         return response
 
+    install_observability(app)
     app.include_router(router, prefix="/api/v1")
     # Unversioned alias so existing links and clients keep working; hidden from the schema.
     app.include_router(router, prefix="/api", include_in_schema=False, deprecated=True)
