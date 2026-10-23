@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 
 from app.config import API_VERSION, STATIC_DIR
@@ -39,6 +39,16 @@ def create_app(static_dir: Path | None = STATIC_DIR) -> FastAPI:
         if request.method == "GET" and response.status_code == 200 and is_data_read:
             response.headers["Cache-Control"] = CACHE_CONTROL
         return response
+
+    @app.middleware("http")
+    async def head_as_get(request: Request, call_next):
+        # FastAPI routes only answer GET; uptime checks and `curl -I` send HEAD. Run the GET and drop the body,
+        # keeping status and headers (including Content-Length) as HTTP specifies.
+        if request.method != "HEAD" or not request.url.path.startswith("/api/"):
+            return await call_next(request)
+        request.scope["method"] = "GET"
+        response = await call_next(request)
+        return Response(status_code=response.status_code, headers=dict(response.headers))
 
     install_observability(app)
     app.include_router(router, prefix="/api/v1")
