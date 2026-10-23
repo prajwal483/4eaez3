@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { api } from "../api";
 import { accuracyFixture, horizonFixture } from "../test/fixtures";
 import { AccuracyView } from "./AccuracyView";
@@ -33,6 +33,7 @@ describe("AccuracyView", () => {
     vi.mocked(api.accuracy).mockReturnValue(new Promise(() => {}));
     rerender(<AccuracyView horizon={6} />);
     expect(await screen.findByText("Updating…")).toBeInTheDocument();
+    await waitFor(() => expect(api.accuracy).toHaveBeenLastCalledWith(6, anySignal));
     expect(screen.getByText("512 MW")).toBeInTheDocument();
   });
 
