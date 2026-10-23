@@ -1,0 +1,878 @@
+{
+  "components": {
+    "schemas": {
+      "AccuracyPoint": {
+        "properties": {
+          "actual_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Mw"
+          },
+          "error_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Mw"
+          },
+          "forecast_mw": {
+            "title": "Forecast Mw",
+            "type": "number"
+          },
+          "publish_time": {
+            "format": "date-time",
+            "title": "Publish Time",
+            "type": "string"
+          },
+          "start_time": {
+            "format": "date-time",
+            "title": "Start Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_time",
+          "publish_time",
+          "forecast_mw",
+          "actual_mw",
+          "error_mw"
+        ],
+        "title": "AccuracyPoint",
+        "type": "object"
+      },
+      "AccuracyResponse": {
+        "properties": {
+          "histogram": {
+            "items": {
+              "$ref": "#/components/schemas/HistogramBin"
+            },
+            "title": "Histogram",
+            "type": "array"
+          },
+          "horizon_hours": {
+            "title": "Horizon Hours",
+            "type": "integer"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/Metrics"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/AccuracyPoint"
+            },
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "horizon_hours",
+          "points",
+          "metrics",
+          "histogram"
+        ],
+        "title": "AccuracyResponse",
+        "type": "object"
+      },
+      "DecisionPoint": {
+        "properties": {
+          "actual_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Mw"
+          },
+          "forecast_mw": {
+            "title": "Forecast Mw",
+            "type": "number"
+          },
+          "high_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "High Mw"
+          },
+          "low_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low Mw"
+          },
+          "start_time": {
+            "format": "date-time",
+            "title": "Start Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_time",
+          "forecast_mw",
+          "actual_mw",
+          "low_mw",
+          "high_mw"
+        ],
+        "title": "DecisionPoint",
+        "type": "object"
+      },
+      "DecisionResponse": {
+        "properties": {
+          "actual_energy_mwh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Energy Mwh"
+          },
+          "band_samples": {
+            "title": "Band Samples",
+            "type": "integer"
+          },
+          "delivery_date": {
+            "format": "date",
+            "title": "Delivery Date",
+            "type": "string"
+          },
+          "forecast_energy_mwh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecast Energy Mwh"
+          },
+          "forecast_published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecast Published At"
+          },
+          "gate_closure": {
+            "format": "date-time",
+            "title": "Gate Closure",
+            "type": "string"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/Metrics"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionPoint"
+            },
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "delivery_date",
+          "gate_closure",
+          "forecast_published_at",
+          "band_samples",
+          "points",
+          "forecast_energy_mwh",
+          "actual_energy_mwh",
+          "metrics"
+        ],
+        "title": "DecisionResponse",
+        "type": "object"
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorBody",
+        "type": "object"
+      },
+      "ErrorDetail": {
+        "properties": {
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "message"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
+      "Health": {
+        "properties": {
+          "actual_periods": {
+            "title": "Actual Periods",
+            "type": "integer"
+          },
+          "data_source": {
+            "enum": [
+              "snapshot",
+              "live"
+            ],
+            "title": "Data Source",
+            "type": "string"
+          },
+          "forecast_runs": {
+            "title": "Forecast Runs",
+            "type": "integer"
+          },
+          "status": {
+            "const": "ok",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "data_source",
+          "forecast_runs",
+          "actual_periods"
+        ],
+        "title": "Health",
+        "type": "object"
+      },
+      "HistogramBin": {
+        "properties": {
+          "bin_end_mw": {
+            "title": "Bin End Mw",
+            "type": "number"
+          },
+          "bin_start_mw": {
+            "title": "Bin Start Mw",
+            "type": "number"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bin_start_mw",
+          "bin_end_mw",
+          "count"
+        ],
+        "title": "HistogramBin",
+        "type": "object"
+      },
+      "HorizonRow": {
+        "properties": {
+          "horizon_hours": {
+            "title": "Horizon Hours",
+            "type": "integer"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/Metrics"
+          },
+          "p10_error_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P10 Error Mw"
+          },
+          "p90_error_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P90 Error Mw"
+          }
+        },
+        "required": [
+          "horizon_hours",
+          "metrics",
+          "p10_error_mw",
+          "p90_error_mw"
+        ],
+        "title": "HorizonRow",
+        "type": "object"
+      },
+      "Meta": {
+        "properties": {
+          "data_source": {
+            "enum": [
+              "snapshot",
+              "live"
+            ],
+            "title": "Data Source",
+            "type": "string"
+          },
+          "default_gate_time_utc": {
+            "title": "Default Gate Time Utc",
+            "type": "string"
+          },
+          "first_delivery_date": {
+            "format": "date",
+            "title": "First Delivery Date",
+            "type": "string"
+          },
+          "forecast_runs": {
+            "title": "Forecast Runs",
+            "type": "integer"
+          },
+          "last_delivery_date": {
+            "format": "date",
+            "title": "Last Delivery Date",
+            "type": "string"
+          },
+          "max_horizon_hours": {
+            "title": "Max Horizon Hours",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "first_delivery_date",
+          "last_delivery_date",
+          "default_gate_time_utc",
+          "max_horizon_hours",
+          "forecast_runs",
+          "data_source"
+        ],
+        "title": "Meta",
+        "type": "object"
+      },
+      "Metrics": {
+        "properties": {
+          "bias_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bias Mw"
+          },
+          "mae_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mae Mw"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "p50_abs_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P50 Abs Mw"
+          },
+          "p90_abs_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P90 Abs Mw"
+          },
+          "rmse_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rmse Mw"
+          },
+          "wape_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wape Pct"
+          }
+        },
+        "required": [
+          "n",
+          "mae_mw",
+          "rmse_mw",
+          "bias_mw",
+          "wape_pct",
+          "p50_abs_mw",
+          "p90_abs_mw"
+        ],
+        "title": "Metrics",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "GB wind forecasts available at day-ahead gate closure, and how accurate they were.",
+    "title": "GridBrick API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/accuracy": {
+      "get": {
+        "operationId": "accuracy_api_v1_accuracy_get",
+        "parameters": [
+          {
+            "description": "Minimum hours between forecast publication and delivery",
+            "in": "query",
+            "name": "horizon",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "description": "Minimum hours between forecast publication and delivery",
+              "maximum": 48,
+              "minimum": 0,
+              "title": "Horizon",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "First delivery day to include (default: start of window)",
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "First delivery day to include (default: start of window)",
+              "title": "Start"
+            }
+          },
+          {
+            "description": "Last delivery day to include, inclusive (default: end of window)",
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Last delivery day to include, inclusive (default: end of window)",
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccuracyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request outside the supported range"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid parameters"
+          }
+        },
+        "summary": "Forecast accuracy at one horizon",
+        "tags": [
+          "accuracy"
+        ]
+      }
+    },
+    "/api/v1/accuracy/by-horizon": {
+      "get": {
+        "operationId": "by_horizon_api_v1_accuracy_by_horizon_get",
+        "parameters": [
+          {
+            "description": "First delivery day to include (default: start of window)",
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "First delivery day to include (default: start of window)",
+              "title": "Start"
+            }
+          },
+          {
+            "description": "Last delivery day to include, inclusive (default: end of window)",
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Last delivery day to include, inclusive (default: end of window)",
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/HorizonRow"
+                  },
+                  "title": "Response By Horizon Api V1 Accuracy By Horizon Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request outside the supported range"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid parameters"
+          }
+        },
+        "summary": "Error metrics for every 3 h horizon from 0 to 48 h",
+        "tags": [
+          "accuracy"
+        ]
+      }
+    },
+    "/api/v1/decision": {
+      "get": {
+        "operationId": "decision_api_v1_decision_get",
+        "parameters": [
+          {
+            "description": "Delivery day (UTC), 2026-01-02 to 2026-02-01",
+            "in": "query",
+            "name": "delivery_date",
+            "required": true,
+            "schema": {
+              "description": "Delivery day (UTC), 2026-01-02 to 2026-02-01",
+              "examples": [
+                "2026-01-15"
+              ],
+              "format": "date",
+              "title": "Delivery Date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Gate closure on D-1, HH:MM UTC",
+            "in": "query",
+            "name": "gate_time",
+            "required": false,
+            "schema": {
+              "default": "09:20:00",
+              "description": "Gate closure on D-1, HH:MM UTC",
+              "examples": [
+                "09:20"
+              ],
+              "format": "time",
+              "title": "Gate Time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request outside the supported range"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid parameters"
+          }
+        },
+        "summary": "Forecast available at gate closure for one delivery day",
+        "tags": [
+          "decision"
+        ]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request outside the supported range"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid parameters"
+          }
+        },
+        "summary": "Liveness and loaded dataset",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/meta": {
+      "get": {
+        "operationId": "meta_api_v1_meta_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request outside the supported range"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid parameters"
+          }
+        },
+        "summary": "Delivery window and defaults",
+        "tags": [
+          "reference"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "description": "What the forecast said when the buyer had to commit",
+      "name": "decision"
+    },
+    {
+      "description": "How forecast error depends on lead time",
+      "name": "accuracy"
+    },
+    {
+      "description": "Window and defaults the UI needs",
+      "name": "reference"
+    },
+    {
+      "description": "Operational endpoints",
+      "name": "system"
+    }
+  ]
+}
