@@ -5,7 +5,7 @@ A pilot web app for a UK utility's day-ahead power buying team. It answers two q
 1. **What wind forecast was available when we had to buy?** For each delivery day the app shows the latest GB national wind forecast published before day-ahead gate closure (default 11:00 UTC on D-1). Around that forecast it shows an empirical P10–P90 range and the "shortfall at risk": the energy to cover if wind lands at its P10.
 2. **How much can we trust it?** It reports MAE, RMSE, bias, WAPE and P90 absolute error for any forecast lead time from 0 to 48 h, plus the error distribution and how error grows with lead time.
 
-**Live app:** <VERCEL_URL>
+**Live app:** https://4eaez3.vercel.app
 
 ## Key findings (January 2026 delivery, 744 hours)
 

@@ -1,1 +1,5 @@
--r backend/requirements.txt
+# Vercel serverless dependencies; keep pins in sync with backend/requirements.txt (uvicorn not needed here).
+fastapi==0.115.6
+pandas==2.2.3
+numpy==2.2.1
+httpx==0.28.1
