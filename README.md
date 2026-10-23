@@ -1,81 +1,61 @@
-# GridBrick · Wind Forecast Monitor
+# GridBrick
 
-A pilot web app for a UK utility's day-ahead power buying team. It answers two questions for January 2026 delivery:
-
-1. **What wind forecast was available when we had to buy?** For each delivery day the app shows the latest GB national wind forecast published before day-ahead gate closure on D-1. The default is 09:20 UTC, the EPEX GB 60-minute auction; the N2EX (09:50) and EPEX 30-minute (15:30) auctions can also be selected. Around that forecast it shows an empirical P10–P90 range and the "shortfall at risk": the energy to cover if wind lands at its P10.
-2. **How much can we trust it?** It reports MAE, RMSE, bias, WAPE and P90 absolute error for any forecast lead time from 0 to 48 h, plus the error distribution and how error grows with lead time.
+[![CI](https://github.com/prajwal483/4eaez3/actions/workflows/ci.yml/badge.svg)](https://github.com/prajwal483/4eaez3/actions/workflows/ci.yml)
 
 **Live app:** https://4eaez3.vercel.app
 
-## Key findings (January 2026 delivery, 744 hours)
+A UK utility's day-ahead desk buys power the day before delivery. However much wind the forecast promises at that moment, they don't have to buy from thermal plants, so the forecast they see at the auction deadline drives real money. I built GridBrick to answer two questions for January 2026:
 
-| Lead time | MAE | Bias (forecast − actual) | WAPE |
+1. **What did the wind forecast say when we had to commit?**
+2. **How far can we trust it?**
+
+The *Day-ahead decision* page shows the latest national wind forecast published before the auction gate, a likely range around it, and the extra energy the desk might need if wind comes in at the low end. The *Forecast accuracy* page shows how wrong the forecast has been, and how that changes with lead time.
+
+## What I found
+
+| Lead time | MAE | Bias (forecast − outturn) | WAPE |
 |---|---|---|---|
 | 0 h | 1.68 GW | +1.48 GW | 14.9% |
 | 24 h | 1.93 GW | +1.74 GW | 17.1% |
 | 48 h | 2.30 GW | +1.80 GW | 20.5% |
 
-- Forecasts get less accurate the further ahead they look: MAE rises from 1.7 GW to 2.3 GW between 0 and 48 h.
-- WINDFOR sits **about 1.5–1.8 GW above FUELHH outturn** at every lead time, even at 0 h, where it is above outturn in about 90% of hours. That pattern points to a structural gap between the two datasets rather than forecasting skill alone. Likely causes are transmission-constraint curtailment (FUELHH is metered output after balancing actions) and differences in which wind farms each dataset covers. See Caveats before using the bias for decisions.
-- At the day-ahead gate, delivery hours are about 15–39 h ahead. The app turns the error spread at each hour's lead time into a per-day "shortfall at risk" figure.
+- Error grows with lead time, as you'd expect, but the bigger story is the bias. WINDFOR sits 1.5–1.8 GW above metered outturn even at 0 h, where it's high in about nine hours out of ten. That looks less like forecasting skill and more like a gap between the datasets: curtailment and coverage differences are my best guesses. I'd want to confirm that before anyone "corrects" for it.
+- The likely range covers 78% of hours against an 80% target, and misses on the downside more than the upside. So I present "shortfall at risk" as a lower bound, not a guarantee.
 
-## Data
+## Decisions worth knowing about
 
-- Actuals: Elexon BMRS `FUELHH`, `fuelType = WIND`, half-hourly `generation` (MW).
-- Forecasts: Elexon BMRS `WINDFOR`, hourly `generation` (MW) per `publishTime` run.
-- Window: forecasts published 2025-12-23 → 2026-02-01 12:00 UTC, and actuals 2025-12-25 → 2026-02-02. This covers purchase decisions made during January 2026 (delivery 2026-01-02 → 2026-02-01), plus lead-in history for the error bands.
-- January 2026 is history, so a snapshot is committed in `backend/data/`. To refresh it, run `python -m scripts.snapshot` from `backend/`. If the snapshot is missing, the app fetches live from Elexon.
+The brief left a few things open. These are the calls I made; each has a short record in [`docs/decisions/`](docs/decisions/).
 
-## Method
+- **Scope.** "Decisions in January" means delivery from 2 Jan to 1 Feb. ([0001](docs/decisions/0001-scope-january-decisions.md))
+- **Gate closure.** The default is 09:20, not 11:00. I started with 11:00, then found it's the pre-Brexit time. ([0002](docs/decisions/0002-gate-closure-0920.md))
+- **Data.** A committed snapshot, not live calls, so results are reproducible and the demo can't be broken by Elexon downtime. ([0003](docs/decisions/0003-committed-snapshot.md))
+- **Alignment.** Hourly comparisons, because that's WINDFOR's resolution. ([0004](docs/decisions/0004-hourly-alignment.md))
+- **Likely range.** It uses only information available at the gate, at each hour's own lead time, and is checked for calibration. ([0005](docs/decisions/0005-error-band-method.md))
+- **Hosting.** Vercel for free hosting; Docker for local runs, smoke-tested in CI. ([0006](docs/decisions/0006-vercel-and-docker.md))
+- **API.** Versioned under `/api/v1`, with one error shape and request ids. ([0007](docs/decisions/0007-api-versioning-and-errors.md))
 
-- **Horizon h:** for each target hour, the latest forecast published at least h hours earlier.
-- **Error:** `forecast − actual`. Positive means wind was over-forecast, so the buyer is short.
-- **Decision band:** for each delivery hour, P10/P90 of signed errors over the previous 14 days at that hour's own lead time from gate closure. It uses only outturn published before gate closure, so there is no look-ahead. The band is hidden if there are fewer than 48 samples.
-- **Band calibration** (`python -m scripts.calibration`, all 744 January hours, 09:20 gate): outturn fell inside the P10–P90 range in **78.0%** of hours (nominal 80%), below P10 in **15.3%** (nominal 10%) and above P90 in **6.7%** (nominal 10%). So the range is somewhat too optimistic on the downside, and the "shortfall at risk" figure should be read as a lower bound.
-- WINDFOR is hourly, so all comparisons use hourly target times. Actuals are matched on the half-hour period that starts on the hour.
+## How it fits together
 
-## Caveats
+```
+Elexon BMRS (FUELHH wind, WINDFOR) ──► backend/data snapshot
+                                            │
+                       backend/app/analytics.py   pure pandas functions, no I/O
+                                            │
+                       backend/app/routes.py      FastAPI /api/v1, typed schemas, one error shape
+                                            │  OpenAPI ──► generated TypeScript types
+                       frontend/src               React + Recharts
+```
 
-- **Bias interpretation:** the consistent forecast-above-outturn gap is measured correctly, but it probably mixes forecast error with curtailment and dataset-coverage effects. Any bias correction should be validated (for example against curtailment volumes) before it drives purchasing.
-- **Gate closure:** times are UK local time, which equals UTC in January. The app uses the published auction times and does not model bid-preparation lead time.
-- **Range calibration:** the P10–P90 range under-covers the downside (see Method). A longer or bias-adjusted error window is the obvious next step.
+- **Backend.** The analysis lives in pure functions, so it's tested directly against a synthetic dataset where the error is exactly 10 MW per hour of lead time. Every expected value in the tests can be worked out by hand. Routes stay thin: validate input, call analytics, return a schema.
+- **Frontend.**
+  - View state lives in the URL, so links are shareable and a refresh keeps your place.
+  - Data goes through a small query cache that cancels stale requests, so revisiting a day is instant.
+  - The horizon slider only fetches when you pause.
+  - Charts are memoised, so the 744-point series doesn't redraw on every tick.
 
-## Files and directories
+## Running it
 
-| Path | Purpose |
-|---|---|
-| `backend/app/config.py` | Constants: Elexon URL, data windows, gate closure, paths |
-| `backend/app/elexon.py` | Fetches FUELHH/WINDFOR and normalises them into DataFrames |
-| `backend/app/store.py` | Dataset type; snapshot save/load; cached loader with live fallback |
-| `backend/app/analytics.py` | Pure analysis: horizon selection, metrics, histogram, decision view, error bands |
-| `backend/app/schemas.py` | Pydantic API response models |
-| `backend/app/main.py` | FastAPI routes (`/api/*`) and static frontend serving |
-| `backend/data/` | Committed January 2026 snapshot (gzipped CSV) |
-| `backend/scripts/snapshot.py` | Refreshes the snapshot from Elexon |
-| `backend/scripts/calibration.py` | Measures how often outturn lands inside the decision-view P10–P90 range |
-| `backend/tests/` | pytest suite using a synthetic dataset where error = 10 MW × horizon |
-| `frontend/src/App.tsx` | App shell and tabs |
-| `frontend/src/components/` | Page views (`DecisionView`, `AccuracyView`) and their building blocks: `layout/`, `controls/`, `charts/`, `decision/`, `accuracy/`, `feedback/` (+ tests) |
-| `frontend/src/styles/` | Design tokens and base styles |
-| `frontend/src/api.ts`, `types.ts` | Typed API client mirroring the backend schemas |
-| `frontend/src/format.ts`, `useAsync.ts` | Formatting helpers and data-loading hook |
-| `Dockerfile`, `docker-compose.yml` | Container build and local run (API + frontend in one image) |
-| `api/index.py`, `vercel.json`, `requirements.txt` | Vercel deployment: serverless FastAPI function + static frontend |
-| `docs/demo-script.md` | Outline for the demo video |
-| `docs/superpowers/plans/` | The implementation plan this code was built from |
-
-## API
-
-| Endpoint | Description |
-|---|---|
-| `GET /api/meta` | Delivery window, default gate closure time, data source |
-| `GET /api/decision?delivery_date=2026-01-15&gate_time=09:20` | Forecast at gate closure, P10–P90 band, outturn, metrics |
-| `GET /api/accuracy?horizon=24&start=2026-01-02&end=2026-02-01` | Hourly forecast/actual pairs, metrics, error histogram |
-| `GET /api/accuracy/by-horizon` | Metrics and P10/P90 error for horizons 0, 3, …, 48 h |
-
-## Running
-
-With Docker (recommended):
+With Docker:
 
 ```bash
 docker compose up --build
@@ -83,38 +63,80 @@ docker compose up --build
 
 Then open http://localhost:8000.
 
-Local development (Python 3.12+, Node 20+):
+For development (Python 3.12+, Node 20+):
 
 ```bash
-cd backend && python -m venv .venv && source .venv/Scripts/activate  # .venv/bin/activate on macOS/Linux
-pip install -r requirements-dev.txt && uvicorn app.main:app --reload --port 8000
+cd backend && python -m venv .venv && source .venv/Scripts/activate && pip install -r requirements-dev.txt
+uvicorn app.main:app --reload --port 8000
 ```
 
 ```bash
-cd frontend && npm install && npm run dev   # http://localhost:5173, proxies /api to :8000
+cd frontend && npm install && npm run dev
 ```
 
-Tests:
+The dev server runs on http://localhost:5173 and proxies `/api` to port 8000.
+
+## Checks
+
+Every push and pull request runs [CI](.github/workflows/ci.yml):
+
+- **Backend:** ruff, and pytest with a 95% coverage gate.
+- **Frontend:** ESLint, type-check, Vitest and a production build.
+- **API contract:** fails if the TypeScript types are out of date with the API.
+- **Docker:** builds the image and calls it.
+
+To run the same checks locally:
 
 ```bash
-cd backend && pytest
+cd backend && ruff check . && pytest --cov=app
 ```
 
 ```bash
-cd frontend && npm test
+cd frontend && npm run lint && npm run typecheck && npm test
 ```
 
-## Deployment
+[CONTRIBUTING.md](CONTRIBUTING.md) covers the workflow, changing the API, and refreshing the data.
 
-The app is deployed on Vercel (free tier). Vercel's CDN serves the built React app (`frontend/dist`), and `api/index.py` runs the same FastAPI app as a Python serverless function for `/api/*` (see `vercel.json`). The committed snapshot is bundled with the function, so there are no runtime calls to Elexon.
+## Project layout
 
-```bash
-npx vercel login
-npx vercel --prod
+```
+backend/
+  app/            config, Elexon client, snapshot store, analytics, schemas, routes, errors, logging
+  data/           committed January 2026 snapshot
+  scripts/        snapshot refresh, calibration check, OpenAPI export
+  tests/          unit, API, contract, observability and edge-case tests
+frontend/
+  src/components/ page views and their parts: layout, controls, charts, decision, accuracy, feedback
+  src/data/       query cache;  src/state/  URL view state;  src/hooks/  debounce, keyboard
+  src/styles/     design tokens and base styles
+  openapi.json    API contract the TypeScript types are generated from
+api/index.py      Vercel entrypoint for the FastAPI app
+docs/decisions/   decision records;  docs/archive/  earlier planning documents
+Dockerfile, docker-compose.yml, vercel.json
 ```
 
-The Docker image in `Dockerfile` runs the identical app as a single container. It is used for local runs and can be deployed to any container host.
+## API
 
-## AI tools
+Interactive docs are at `/docs` when running locally.
 
-This project was built with the help of AI tools: Claude Code (Anthropic) assisted with planning, code generation and tests. All design decisions, the analysis method and the final code were reviewed by the author.
+| Endpoint | What it returns |
+|---|---|
+| `GET /api/v1/decision?delivery_date=2026-01-15&gate_time=09:20` | The forecast at gate closure, the likely range, outturn and metrics |
+| `GET /api/v1/accuracy?horizon=24` | Hourly forecast and outturn pairs, metrics and error histogram |
+| `GET /api/v1/accuracy/by-horizon` | Metrics for every 3 h horizon from 0 to 48 h |
+| `GET /api/v1/meta` | Delivery window and defaults |
+| `GET /api/v1/health` | Liveness and the loaded dataset |
+
+- **Errors** always look like `{"error": {"code": "out_of_window", "message": "...", "request_id": "..."}}`.
+- **Request ids:** every response carries an `X-Request-ID`, which also appears in the JSON logs.
+
+## What I'd do next
+
+- Check the forecast–outturn gap against curtailment data before offering any bias correction.
+- Widen or bias-adjust the error window until the range is properly calibrated.
+- Add other renewables and the demand forecast, so the page shows the residual the desk actually has to buy.
+- Move from the snapshot to a scheduled ingest once this needs live data.
+
+## How I used AI
+
+I used Claude Code (Anthropic) throughout: for planning, writing code and tests, and reviewing. I directed the work, made the product and analysis decisions described above, and checked the results against the live data. The planning documents from that process are in [`docs/archive/ai-planning/`](docs/archive/ai-planning/).
