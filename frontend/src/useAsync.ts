@@ -1,23 +1,28 @@
-import { type DependencyList, useEffect, useState } from "react";
+import { type DependencyList, useCallback, useEffect, useState } from "react";
 
+interface AsyncState<T> {
+  data: T | null;
+  error: string | null;
+  loading: boolean;
+}
+
+/** Loads data when deps change; keeps the previous data while refetching so views can show it dimmed. */
 export function useAsync<T>(load: () => Promise<T>, deps: DependencyList) {
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState<AsyncState<T>>({ data: null, error: null, loading: true });
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    setState((s) => ({ ...s, loading: true, error: null }));
     load()
-      .then((d) => !cancelled && setData(d))
-      .catch((e: Error) => !cancelled && setError(e.message))
-      .finally(() => !cancelled && setLoading(false));
+      .then((data) => !cancelled && setState({ data, error: null, loading: false }))
+      .catch((e: Error) => !cancelled && setState((s) => ({ ...s, error: e.message, loading: false })));
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [...deps, attempt]);
 
-  return { data, error, loading };
+  const reload = useCallback(() => setAttempt((n) => n + 1), []);
+  return { ...state, reload };
 }
