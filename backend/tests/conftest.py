@@ -11,11 +11,13 @@ def make_dataset() -> Dataset:
     rows = []
     for publish in pd.date_range("2025-12-31", "2026-01-03 18:00", freq="6h", tz="UTC"):
         for k in range(49):
-            rows.append({
-                "publish_time": publish,
-                "start_time": publish + pd.Timedelta(hours=k),
-                "forecast_mw": 1000.0 + 10 * k,
-            })
+            rows.append(
+                {
+                    "publish_time": publish,
+                    "start_time": publish + pd.Timedelta(hours=k),
+                    "forecast_mw": 1000.0 + 10 * k,
+                }
+            )
     forecasts = pd.DataFrame(rows).sort_values(["start_time", "publish_time"]).reset_index(drop=True)
     return Dataset(actuals=actuals, forecasts=forecasts, source="snapshot")
 

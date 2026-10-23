@@ -1,0 +1,10 @@
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI declares parameters through these calls in default values; that is the framework's design.
+extend-immutable-calls = ["fastapi.Query", "fastapi.Depends"]

@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import httpx
 import pandas as pd
@@ -8,10 +8,30 @@ from app.elexon import fetch_actuals, fetch_forecasts, parse_actuals, parse_fore
 
 def test_parse_actuals_keeps_wind_and_latest_publish():
     records = [
-        {"publishTime": "2026-01-10T00:30:00Z", "startTime": "2026-01-10T00:00:00Z", "fuelType": "WIND", "generation": 100},
-        {"publishTime": "2026-01-10T01:00:00Z", "startTime": "2026-01-10T00:00:00Z", "fuelType": "WIND", "generation": 110},
-        {"publishTime": "2026-01-10T01:00:00Z", "startTime": "2026-01-10T00:30:00Z", "fuelType": "CCGT", "generation": 999},
-        {"publishTime": "2026-01-10T01:00:00Z", "startTime": "2026-01-10T00:30:00Z", "fuelType": "WIND", "generation": 120},
+        {
+            "publishTime": "2026-01-10T00:30:00Z",
+            "startTime": "2026-01-10T00:00:00Z",
+            "fuelType": "WIND",
+            "generation": 100,
+        },
+        {
+            "publishTime": "2026-01-10T01:00:00Z",
+            "startTime": "2026-01-10T00:00:00Z",
+            "fuelType": "WIND",
+            "generation": 110,
+        },
+        {
+            "publishTime": "2026-01-10T01:00:00Z",
+            "startTime": "2026-01-10T00:30:00Z",
+            "fuelType": "CCGT",
+            "generation": 999,
+        },
+        {
+            "publishTime": "2026-01-10T01:00:00Z",
+            "startTime": "2026-01-10T00:30:00Z",
+            "fuelType": "WIND",
+            "generation": 120,
+        },
     ]
     df = parse_actuals(records)
     assert list(df.columns) == ["start_time", "actual_mw"]
@@ -43,9 +63,17 @@ def test_fetch_actuals_requests_wind_for_settlement_dates():
 
     def handler(request: httpx.Request) -> httpx.Response:
         seen["url"] = request.url
-        return httpx.Response(200, json=[
-            {"publishTime": "2026-01-01T00:30:00Z", "startTime": "2026-01-01T00:00:00Z", "fuelType": "WIND", "generation": 9000},
-        ])
+        return httpx.Response(
+            200,
+            json=[
+                {
+                    "publishTime": "2026-01-01T00:30:00Z",
+                    "startTime": "2026-01-01T00:00:00Z",
+                    "fuelType": "WIND",
+                    "generation": 9000,
+                },
+            ],
+        )
 
     with httpx.Client(transport=httpx.MockTransport(handler)) as client:
         df = fetch_actuals(client, date(2026, 1, 1), date(2026, 1, 2))
@@ -66,8 +94,8 @@ def test_fetch_forecasts_requests_publish_window():
     with httpx.Client(transport=httpx.MockTransport(handler)) as client:
         df = fetch_forecasts(
             client,
-            datetime(2026, 1, 1, tzinfo=timezone.utc),
-            datetime(2026, 1, 2, tzinfo=timezone.utc),
+            datetime(2026, 1, 1, tzinfo=UTC),
+            datetime(2026, 1, 2, tzinfo=UTC),
         )
     assert seen["url"].path.endswith("/WINDFOR/stream")
     assert seen["url"].params["publishDateTimeFrom"] == "2026-01-01T00:00:00Z"

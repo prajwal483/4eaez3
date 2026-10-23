@@ -45,10 +45,12 @@ def test_within_is_half_open(dataset):
 
 
 def test_error_metrics_ignores_missing_actuals():
-    joined = pd.DataFrame({
-        "forecast_mw": [110.0, 90.0, 100.0],
-        "actual_mw": [100.0, 100.0, None],
-    })
+    joined = pd.DataFrame(
+        {
+            "forecast_mw": [110.0, 90.0, 100.0],
+            "actual_mw": [100.0, 100.0, None],
+        }
+    )
     joined["error_mw"] = joined["forecast_mw"] - joined["actual_mw"]
     m = error_metrics(joined)
     assert m == {

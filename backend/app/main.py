@@ -1,4 +1,5 @@
 """HTTP layer: validates inputs, delegates to analytics, serves the built frontend."""
+
 from collections.abc import Callable
 from datetime import date, time, timedelta
 from pathlib import Path
