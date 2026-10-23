@@ -1,4 +1,5 @@
 """Where the data comes from: a committed snapshot of the January 2026 window, or Elexon live."""
+
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path

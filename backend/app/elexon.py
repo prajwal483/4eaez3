@@ -1,4 +1,5 @@
 """Fetch Elexon BMRS datasets and normalise them into the canonical DataFrames."""
+
 from datetime import date, datetime
 
 import httpx
@@ -16,34 +17,42 @@ def _iso_utc(value: datetime) -> str:
 def parse_actuals(records: list[dict]) -> pd.DataFrame:
     """Wind outturn per half hour; when a period was republished, keep the latest value."""
     if not records:
-        return pd.DataFrame({
-            "start_time": pd.Series(dtype="datetime64[ns, UTC]"),
-            "actual_mw": pd.Series(dtype=float),
-        })
+        return pd.DataFrame(
+            {
+                "start_time": pd.Series(dtype="datetime64[ns, UTC]"),
+                "actual_mw": pd.Series(dtype=float),
+            }
+        )
     df = pd.DataFrame.from_records(records)
     df = df[df["fuelType"] == "WIND"]
     df = df.sort_values("publishTime").drop_duplicates("startTime", keep="last")
-    out = pd.DataFrame({
-        "start_time": pd.to_datetime(df["startTime"], utc=True),
-        "actual_mw": df["generation"].astype(float),
-    })
+    out = pd.DataFrame(
+        {
+            "start_time": pd.to_datetime(df["startTime"], utc=True),
+            "actual_mw": df["generation"].astype(float),
+        }
+    )
     return out.sort_values("start_time").reset_index(drop=True)
 
 
 def parse_forecasts(records: list[dict]) -> pd.DataFrame:
     """One row per (forecast run, target hour)."""
     if not records:
-        return pd.DataFrame({
-            "publish_time": pd.Series(dtype="datetime64[ns, UTC]"),
-            "start_time": pd.Series(dtype="datetime64[ns, UTC]"),
-            "forecast_mw": pd.Series(dtype=float),
-        })
+        return pd.DataFrame(
+            {
+                "publish_time": pd.Series(dtype="datetime64[ns, UTC]"),
+                "start_time": pd.Series(dtype="datetime64[ns, UTC]"),
+                "forecast_mw": pd.Series(dtype=float),
+            }
+        )
     df = pd.DataFrame.from_records(records)
-    out = pd.DataFrame({
-        "publish_time": pd.to_datetime(df["publishTime"], utc=True),
-        "start_time": pd.to_datetime(df["startTime"], utc=True),
-        "forecast_mw": df["generation"].astype(float),
-    })
+    out = pd.DataFrame(
+        {
+            "publish_time": pd.to_datetime(df["publishTime"], utc=True),
+            "start_time": pd.to_datetime(df["startTime"], utc=True),
+            "forecast_mw": df["generation"].astype(float),
+        }
+    )
     out = out.drop_duplicates(["publish_time", "start_time"], keep="last")
     return out.sort_values(["start_time", "publish_time"]).reset_index(drop=True)
 
