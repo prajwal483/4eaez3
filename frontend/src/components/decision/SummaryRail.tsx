@@ -7,7 +7,9 @@ export function SummaryRail({ decision: d }: { decision: DecisionResponse }) {
   const atRisk = shortfallAtRiskMwh(d);
   return (
     <aside className={s.rail} aria-label="Decision summary">
-      {atRisk == null ? (
+      {d.points.length === 0 ? (
+        <p className={s.noRange}>No forecast was published for this day before the gate.</p>
+      ) : atRisk == null ? (
         <p className={s.noRange}>Not enough history yet for a likely range.</p>
       ) : (
         <div className={s.risk}>

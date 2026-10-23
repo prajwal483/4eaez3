@@ -158,7 +158,7 @@ def decision_view(forecasts: pd.DataFrame, actuals: pd.DataFrame, delivery_date:
         "band_samples": min(band_samples, default=0),
         "points": points,
         # WINDFOR is hourly, so summing MW over the points gives MWh.
-        "forecast_energy_mwh": _r(joined["forecast_mw"].sum()),
+        "forecast_energy_mwh": _r(joined["forecast_mw"].sum()) if len(joined) else None,
         "actual_energy_mwh": _r(joined["actual_mw"].sum()) if complete_actuals else None,
         "metrics": error_metrics(joined),
     }
