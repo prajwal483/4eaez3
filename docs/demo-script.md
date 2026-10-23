@@ -15,7 +15,7 @@
    - Next: more fuel types, a live data feed, alerts.
 
 ## Part 2 — Tech lead review (≤ 5 min)
-1. (1:00) Architecture: Elexon → snapshot/live store → pure pandas analytics → FastAPI → React. One Docker image, deployed on Heroku.
+1. (1:00) Architecture: Elexon → snapshot/live store → pure pandas analytics → FastAPI → React. Docker image for local runs; deployed on Vercel (CDN frontend + serverless FastAPI).
 2. (1:30) Analysis design:
    - Horizon definition ("latest forecast published ≥ h before").
    - Sign convention.
