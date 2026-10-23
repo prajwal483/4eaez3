@@ -5,7 +5,7 @@ A pilot web app for a UK utility's day-ahead power buying team. It answers two q
 1. **What wind forecast was available when we had to buy?** For each delivery day the app shows the latest GB national wind forecast published before day-ahead gate closure (default 11:00 UTC on D-1). Around that forecast it shows an empirical P10–P90 range and the "shortfall at risk": the energy to cover if wind lands at its P10.
 2. **How much can we trust it?** It reports MAE, RMSE, bias, WAPE and P90 absolute error for any forecast lead time from 0 to 48 h, plus the error distribution and how error grows with lead time.
 
-**Live app:** <HEROKU_URL>
+**Live app:** <VERCEL_URL>
 
 ## Key findings (January 2026 delivery, 744 hours)
 
@@ -49,7 +49,8 @@ A pilot web app for a UK utility's day-ahead power buying team. It answers two q
 | `frontend/src/components/` | `DecisionView`, `AccuracyView`, `MetricCards` (+ tests) |
 | `frontend/src/api.ts`, `types.ts` | Typed API client mirroring the backend schemas |
 | `frontend/src/format.ts`, `useAsync.ts` | Formatting helpers and data-loading hook |
-| `Dockerfile`, `docker-compose.yml`, `heroku.yml` | Container build/run and Heroku deployment |
+| `Dockerfile`, `docker-compose.yml` | Container build and local run (API + frontend in one image) |
+| `api/index.py`, `vercel.json`, `requirements.txt` | Vercel deployment: serverless FastAPI function + static frontend |
 | `docs/demo-script.md` | Outline for the demo video |
 | `docs/superpowers/plans/` | The implementation plan this code was built from |
 
@@ -95,12 +96,14 @@ cd frontend && npm test
 
 ## Deployment
 
-Deployed to Heroku using the container stack (`heroku.yml` builds the root `Dockerfile`):
+The app is deployed on Vercel (free tier). Vercel's CDN serves the built React app (`frontend/dist`), and `api/index.py` runs the same FastAPI app as a Python serverless function for `/api/*` (see `vercel.json`). The committed snapshot is bundled with the function, so there are no runtime calls to Elexon.
 
 ```bash
-heroku create <app-name> --stack container
-git push heroku main
+npx vercel login
+npx vercel --prod
 ```
+
+The Docker image in `Dockerfile` runs the identical app as a single container. It is used for local runs and can be deployed to any container host.
 
 ## AI tools
 
