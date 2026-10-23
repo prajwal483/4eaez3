@@ -1,0 +1,39 @@
+:root {
+  --bg: #ffffff;
+  --surface: #f7f7f5;
+  --border: #e6e5e1;
+  --border-strong: #d3d1c9;
+  --text: #1c1c1a;
+  --text-2: #5f5e5a;
+  --text-3: #8a8984;
+  --forecast: #1f5fbf;
+  --forecast-range: rgba(31, 95, 191, 0.12);
+  --outturn: #3d3d3a;
+  --risk: #b45309;
+  --risk-bg: #fdf3e7;
+  --neutral-bar: #b4b2a9;
+  --danger: #a32d2d;
+  --danger-bg: #fcebeb;
+
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 28px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+
+  --radius-control: 6px;
+  --radius-panel: 10px;
+  --shadow-tooltip: 0 4px 16px rgba(28, 28, 26, 0.08), 0 1px 3px rgba(28, 28, 26, 0.06);
+  --content-width: 1200px;
+}
