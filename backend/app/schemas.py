@@ -1,4 +1,4 @@
-"""API response contract. Mirrored by frontend/src/types.ts."""
+"""API response contract. The frontend types are generated from this via OpenAPI."""
 
 from datetime import date, datetime
 from typing import Literal
@@ -70,3 +70,26 @@ class Meta(BaseModel):
     max_horizon_hours: int
     forecast_runs: int
     data_source: Literal["snapshot", "live"]
+
+
+class Health(BaseModel):
+    status: Literal["ok"]
+    data_source: Literal["snapshot", "live"]
+    forecast_runs: int
+    actual_periods: int
+
+
+class ErrorDetail(BaseModel):
+    field: str
+    message: str
+
+
+class ErrorBody(BaseModel):
+    code: str
+    message: str
+    request_id: str | None = None
+    details: list[ErrorDetail] | None = None
+
+
+class ErrorResponse(BaseModel):
+    error: ErrorBody
