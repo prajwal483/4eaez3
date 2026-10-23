@@ -1,66 +1,16 @@
-// Mirrors backend/app/schemas.py. Datetimes are ISO-8601 UTC strings; dates are YYYY-MM-DD.
-export interface Metrics {
-  n: number;
-  mae_mw: number | null;
-  rmse_mw: number | null;
-  bias_mw: number | null;
-  wape_pct: number | null;
-  p50_abs_mw: number | null;
-  p90_abs_mw: number | null;
-}
+// Generated from the backend's OpenAPI schema. Edit backend/app/schemas.py, then run
+// `python -m scripts.export_openapi` (backend/) and `npm run gen:api` (frontend/). Never edit schema.d.ts by hand.
+import type { components } from "./schema";
 
-export interface DecisionPoint {
-  start_time: string;
-  forecast_mw: number;
-  actual_mw: number | null;
-  low_mw: number | null;
-  high_mw: number | null;
-}
+type Schemas = components["schemas"];
 
-export interface DecisionResponse {
-  delivery_date: string;
-  gate_closure: string;
-  forecast_published_at: string | null;
-  band_samples: number;
-  points: DecisionPoint[];
-  forecast_energy_mwh: number | null;
-  actual_energy_mwh: number | null;
-  metrics: Metrics;
-}
-
-export interface AccuracyPoint {
-  start_time: string;
-  publish_time: string;
-  forecast_mw: number;
-  actual_mw: number | null;
-  error_mw: number | null;
-}
-
-export interface HistogramBin {
-  bin_start_mw: number;
-  bin_end_mw: number;
-  count: number;
-}
-
-export interface AccuracyResponse {
-  horizon_hours: number;
-  points: AccuracyPoint[];
-  metrics: Metrics;
-  histogram: HistogramBin[];
-}
-
-export interface HorizonRow {
-  horizon_hours: number;
-  metrics: Metrics;
-  p10_error_mw: number | null;
-  p90_error_mw: number | null;
-}
-
-export interface Meta {
-  first_delivery_date: string;
-  last_delivery_date: string;
-  default_gate_time_utc: string; // HH:MM
-  max_horizon_hours: number;
-  forecast_runs: number;
-  data_source: "snapshot" | "live";
-}
+export type Metrics = Schemas["Metrics"];
+export type DecisionPoint = Schemas["DecisionPoint"];
+export type DecisionResponse = Schemas["DecisionResponse"];
+export type AccuracyPoint = Schemas["AccuracyPoint"];
+export type HistogramBin = Schemas["HistogramBin"];
+export type AccuracyResponse = Schemas["AccuracyResponse"];
+export type HorizonRow = Schemas["HorizonRow"];
+export type Meta = Schemas["Meta"];
+export type Health = Schemas["Health"];
+export type ErrorResponse = Schemas["ErrorResponse"];
