@@ -139,4 +139,4 @@ Interactive docs are at `/docs` when running locally.
 
 ## How I used AI
 
-I used Claude Code (Anthropic) throughout: for planning, writing code and tests, and reviewing. I directed the work, made the product and analysis decisions described above, and checked the results against the live data. The planning documents from that process are in [`docs/archive/ai-planning/`](docs/archive/ai-planning/).
+I used Claude Code for the bulk of the hands-on work: writing code, tests and docs. I set the direction, made the product and analysis calls described above, and reviewed what it produced.
