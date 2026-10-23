@@ -1,8 +1,4 @@
-"""Pure forecast-evaluation functions over the canonical actuals/forecasts frames.
-
-Sign convention: error_mw = forecast_mw - actual_mw. Positive error means wind was
-over-forecast, i.e. the buyer would be short and must procure more.
-"""
+# error_mw = forecast_mw - actual_mw: positive means wind was over-forecast and the buyer is short.
 
 import math
 from collections.abc import Iterable
@@ -15,7 +11,7 @@ import pandas as pd
 from app.config import MAX_HORIZON_HOURS
 
 HOUR = pd.Timedelta(hours=1)
-# FUELHH values for a settlement period are published 30 minutes after it starts.
+# FUELHH publishes each settlement period 30 minutes after it starts.
 ACTUAL_PUBLICATION_LAG = pd.Timedelta(minutes=30)
 
 
@@ -26,7 +22,6 @@ def _r(x) -> float | None:
 
 
 def forecasts_at_horizon(forecasts: pd.DataFrame, min_horizon_hours: float) -> pd.DataFrame:
-    """For each target time, the latest forecast published at least `min_horizon_hours` before it."""
     f = forecasts.copy()
     f["horizon_hours"] = (f["start_time"] - f["publish_time"]) / HOUR
     f = f[f["horizon_hours"] >= min_horizon_hours]
@@ -100,7 +95,6 @@ def error_band(
     min_samples: int = 48,
     quantiles: tuple[float, float] = (0.1, 0.9),
 ) -> ErrorBand:
-    """Empirical spread of recent signed errors at a similar horizon, using only actuals known at `cutoff`."""
     joined = join_actuals(forecasts_at_horizon(forecasts, min_horizon_hours), actuals)
     joined = joined.dropna(subset=["actual_mw"])
     known = joined[
@@ -132,12 +126,11 @@ def decision_view(forecasts: pd.DataFrame, actuals: pd.DataFrame, delivery_date:
     points = []
     band_samples = []
     for row in joined.itertuples(index=False):
-        # Error grows with lead time, so each hour's range comes from past errors at its own lead.
         band = error_band(forecasts, actuals, cutoff, (row.start_time - cutoff) / HOUR)
         band_samples.append(band.samples)
         low = high = None
         if band.low_error_mw is not None:
-            # actual = forecast - error, so the high error quantile gives the low generation bound.
+            # actual = forecast - error, so the high error quantile is the low generation bound.
             low = max(0.0, row.forecast_mw - band.high_error_mw)
             high = row.forecast_mw - band.low_error_mw
         points.append(
@@ -165,7 +158,6 @@ def decision_view(forecasts: pd.DataFrame, actuals: pd.DataFrame, delivery_date:
 
 
 def band_calibration(forecasts: pd.DataFrame, actuals: pd.DataFrame, first: date, last: date, gate_time: time) -> dict:
-    """How often outturn landed inside / below / above the decision-view P10-P90 range (nominal 80/10/10)."""
     inside = below = above = 0
     day = first
     while day <= last:

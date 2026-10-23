@@ -1,5 +1,3 @@
-"""One error shape for every failure, so clients only ever parse {"error": {...}}."""
-
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -9,8 +7,6 @@ _DEFAULT_CODES = {400: "bad_request", 404: "not_found", 405: "method_not_allowed
 
 
 class ApiError(HTTPException):
-    """An expected client error with a stable, machine-readable code."""
-
     def __init__(self, status_code: int, code: str, message: str):
         super().__init__(status_code=status_code, detail=message)
         self.code = code

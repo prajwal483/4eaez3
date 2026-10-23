@@ -2,7 +2,6 @@ import { useEffect } from "react";
 
 const FORM_FIELDS = new Set(["INPUT", "SELECT", "TEXTAREA"]);
 
-/** ←/→ anywhere on the page, except while typing in a form field. */
 export function useArrowKeys(onPrev: () => void, onNext: () => void, enabled: boolean): void {
   useEffect(() => {
     if (!enabled) return;

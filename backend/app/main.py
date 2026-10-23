@@ -1,5 +1,3 @@
-"""App factory: wires routes, error handling and the built frontend."""
-
 from pathlib import Path
 
 from fastapi import FastAPI, Request, Response
@@ -10,8 +8,7 @@ from app.errors import install_error_handlers
 from app.observability import configure_logging, install_observability
 from app.routes import router
 
-# The data is a fixed January 2026 snapshot, so successful reads can be cached; the CDN keeps them for a day
-# and a new deployment invalidates them.
+# Fixed snapshot: safe to cache; a new deploy invalidates the CDN.
 CACHE_CONTROL = "public, max-age=300, s-maxage=86400"
 
 configure_logging()
@@ -42,8 +39,7 @@ def create_app(static_dir: Path | None = STATIC_DIR) -> FastAPI:
 
     @app.middleware("http")
     async def head_as_get(request: Request, call_next):
-        # FastAPI routes only answer GET; uptime checks and `curl -I` send HEAD. Run the GET and drop the body,
-        # keeping status and headers (including Content-Length) as HTTP specifies.
+        # FastAPI routes don't answer HEAD (curl -I, uptime checks): serve the GET without its body.
         if request.method != "HEAD" or not request.url.path.startswith("/api/"):
             return await call_next(request)
         request.scope["method"] = "GET"
@@ -52,7 +48,7 @@ def create_app(static_dir: Path | None = STATIC_DIR) -> FastAPI:
 
     install_observability(app)
     app.include_router(router, prefix="/api/v1")
-    # Unversioned alias so existing links and clients keep working; hidden from the schema.
+    # Deprecated unversioned alias for old links.
     app.include_router(router, prefix="/api", include_in_schema=False, deprecated=True)
 
     if static_dir is not None and static_dir.is_dir():

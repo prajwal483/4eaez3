@@ -1,5 +1,4 @@
-// Generated from the backend's OpenAPI schema. Edit backend/app/schemas.py, then run
-// `python -m scripts.export_openapi` (backend/) and `npm run gen:api` (frontend/). Never edit schema.d.ts by hand.
+// schema.d.ts is generated: see CONTRIBUTING.md, "Changing the API".
 import type { components } from "./schema";
 
 type Schemas = components["schemas"];

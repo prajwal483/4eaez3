@@ -5,7 +5,6 @@ interface State {
   error: Error | null;
 }
 
-/** Keeps a rendering bug in one view from blanking the whole app. */
 export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
   state: State = { error: null };
 

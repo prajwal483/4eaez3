@@ -1,5 +1,3 @@
-"""Vercel serverless entrypoint. Vercel's CDN serves the built frontend; this function serves /api/*."""
-
 import sys
 from pathlib import Path
 
