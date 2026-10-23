@@ -1,5 +1,3 @@
-"""FastAPI dependencies. Tests swap the dataset with app.dependency_overrides[get_dataset]."""
-
 from typing import Annotated
 
 from fastapi import Depends

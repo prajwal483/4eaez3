@@ -1,5 +1,3 @@
-"""Fetch Elexon BMRS datasets and normalise them into the canonical DataFrames."""
-
 from datetime import date, datetime
 
 import httpx
@@ -15,7 +13,7 @@ def _iso_utc(value: datetime) -> str:
 
 
 def parse_actuals(records: list[dict]) -> pd.DataFrame:
-    """Wind outturn per half hour; when a period was republished, keep the latest value."""
+    # Elexon republishes some periods; keep the latest value.
     if not records:
         return pd.DataFrame(
             {
@@ -36,7 +34,6 @@ def parse_actuals(records: list[dict]) -> pd.DataFrame:
 
 
 def parse_forecasts(records: list[dict]) -> pd.DataFrame:
-    """One row per (forecast run, target hour)."""
     if not records:
         return pd.DataFrame(
             {

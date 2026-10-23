@@ -2,7 +2,6 @@ import type { AccuracyResponse, DecisionResponse, ErrorResponse, HorizonRow, Met
 
 const BASE = "/api/v1";
 
-/** A failed API call, carrying the server's error code and request id for support. */
 export class ApiError extends Error {
   constructor(
     message: string,
