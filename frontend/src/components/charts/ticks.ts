@@ -1,6 +1,5 @@
 const STEP_MULTIPLIERS = [1, 2, 2.5, 5, 10];
 
-/** Round axis ticks covering [min, max] and always including 0, e.g. 0, 5000, 10000 … */
 export function niceTicks(min: number, max: number, targetCount = 5): number[] {
   const lo = Math.min(0, min);
   const hi = Math.max(0, max);
@@ -17,7 +16,6 @@ export function niceTicks(min: number, max: number, targetCount = 5): number[] {
   return ticks;
 }
 
-/** Monday 00:00 UTC timestamps from a list of ISO times, for weekly date ticks. */
 export function weeklyTicks(times: string[]): string[] {
   return times.filter((t) => {
     const d = new Date(t);

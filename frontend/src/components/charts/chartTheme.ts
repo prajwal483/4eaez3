@@ -1,4 +1,4 @@
-// Mirrors styles/tokens.css: Recharts needs literal colour values, not CSS variables.
+// Keep in sync with styles/tokens.css; Recharts needs literal colours.
 export const chartColors = {
   forecast: "#1f5fbf",
   forecastRange: "rgba(31, 95, 191, 0.12)",

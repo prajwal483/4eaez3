@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-// The data behind the app is a fixed snapshot, so a result never goes stale within a session.
+// Fixed snapshot, so cached results never go stale within a session.
 const cache = new Map<string, unknown>();
 
 export function clearQueryCache(): void {
@@ -13,10 +13,6 @@ interface QueryResult<T> {
   loading: boolean;
 }
 
-/**
- * Fetch by key with a session cache. Changing the key aborts the in-flight request, and the previous
- * data stays visible while the new key loads, so views can dim instead of flashing empty.
- */
 export function useQuery<T>(key: string, fetcher: (signal: AbortSignal) => Promise<T>) {
   const [state, setState] = useState<QueryResult<T>>(() =>
     cache.has(key)
@@ -42,7 +38,7 @@ export function useQuery<T>(key: string, fetcher: (signal: AbortSignal) => Promi
         setState((s) => ({ ...s, error: e instanceof Error ? e : new Error(String(e)), loading: false }));
       });
     return () => controller.abort();
-    // The fetcher is recreated every render; the key captures everything it depends on.
+    // The fetcher changes every render; the key captures its inputs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, attempt]);
 

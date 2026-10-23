@@ -1,5 +1,3 @@
-"""Structured JSON logs, a request id on every response, and one timing line per request."""
-
 import json
 import logging
 import re
@@ -33,7 +31,7 @@ def configure_logging(level: int = logging.INFO) -> None:
 
 def _request_id(request: Request) -> str:
     incoming = request.headers.get(REQUEST_ID_HEADER, "")
-    # Only trust ids that can't inject into logs or headers.
+    # Reject ids that could inject into logs or headers.
     return incoming if _SAFE_REQUEST_ID.fullmatch(incoming) else uuid.uuid4().hex
 
 
